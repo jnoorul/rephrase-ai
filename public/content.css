@@ -1,0 +1,127 @@
+.rephrase-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    font-family: Arial, sans-serif;
+}
+
+.rephrase-modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.rephrase-modal h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.rephrase-text-section {
+    margin-bottom: 20px;
+}
+
+.rephrase-text-section label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #666;
+}
+
+.rephrase-text-section .text-content {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.rephrase-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.rephrase-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.rephrase-button.accept {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.rephrase-button.accept:hover {
+    background-color: #45a049;
+}
+
+.rephrase-button.retry {
+    background-color: #2196F3;
+    color: white;
+}
+
+.rephrase-button.retry:hover {
+    background-color: #1976D2;
+}
+
+.rephrase-button.cancel {
+    background-color: #f44336;
+    color: white;
+}
+
+.rephrase-button.cancel:hover {
+    background-color: #d32f2f;
+}
+
+.rephrase-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.rephrase-loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.rephrase-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.rephrase-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

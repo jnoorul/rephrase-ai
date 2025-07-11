@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Rephrase AI Options</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .status {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .api-key-section {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Rephrase AI Settings</h1>
+    </div>
+    
+    <div class="section">
+        <h3>AI Provider Configuration</h3>
+        <label for="provider">Default AI Provider:</label>
+        <select id="provider">
+            <option value="anthropic">Anthropic Claude</option>
+            <option value="openai">OpenAI</option>
+        </select>
+    </div>
+    
+    <div class="section">
+        <h3>Anthropic Claude Settings</h3>
+        <label for="claudeModel">Claude Model:</label>
+        <select id="claudeModel">
+            <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+            <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+        </select>
+        
+        <div class="api-key-section">
+            <label for="claudeApiKey">Claude API Key:</label>
+            <input type="password" id="claudeApiKey" placeholder="Enter your Anthropic API key">
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>OpenAI Settings</h3>
+        <label for="openaiModel">OpenAI Model:</label>
+        <select id="openaiModel">
+            <option value="gpt-4">GPT-4</option>
+            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+        </select>
+        
+        <div class="api-key-section">
+            <label for="openaiApiKey">OpenAI API Key:</label>
+            <input type="password" id="openaiApiKey" placeholder="Enter your OpenAI API key">
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>Custom Prompt</h3>
+        <label for="customPrompt">Custom Rephrasing Prompt (optional):</label>
+        <textarea id="customPrompt" rows="4" placeholder="Enter a custom prompt for rephrasing. Leave empty to use default."></textarea>
+    </div>
+    
+    <button id="saveSettings">Save Settings</button>
+    <button id="testConnection">Test Connection</button>
+    
+    <div id="status" class="status" style="display: none;"></div>
+    
+    <script src="options.js"></script>
+</body>
+</html>
