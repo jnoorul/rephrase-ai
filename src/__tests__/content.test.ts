@@ -320,17 +320,63 @@ describe('ContentScript', () => {
       expect(document.querySelector('.rephrase-modal')).toBeFalsy();
     });
 
-    it('should handle Retry button click', () => {
+    it('should handle Retry button click', async () => {
       contentScript.showModal(modalData);
 
       const retryButton = document.querySelector('.rephrase-button.retry') as HTMLButtonElement;
+      
+      // Mock successful response
+      (chrome.runtime.sendMessage as jest.Mock).mockImplementation((message, callback) => {
+        // Simulate async response
+        setTimeout(() => {
+          callback({ success: true, rephrasedText: 'New rephrased text' });
+        }, 10);
+      });
+
       const mockEvent = new Event('click');
       retryButton.dispatchEvent(mockEvent);
+
+      // Check that button shows loading state immediately
+      expect(retryButton.disabled).toBe(true);
+      expect(retryButton.textContent).toBe('Retrying...');
 
       expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
         type: 'REPHRASE_TEXT',
         payload: { text: 'Original text' },
       }, expect.any(Function));
+
+      // Wait for async operation to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Check that button state is reset
+      expect(retryButton.disabled).toBe(false);
+      expect(retryButton.textContent).toBe('Retry');
+    });
+
+    it('should handle Retry button click with runtime error', async () => {
+      contentScript.showModal(modalData);
+
+      const retryButton = document.querySelector('.rephrase-button.retry') as HTMLButtonElement;
+      
+      // Mock runtime error
+      (chrome.runtime.sendMessage as jest.Mock).mockImplementation((message, callback) => {
+        chrome.runtime.lastError = { message: 'Service worker error' };
+        callback(null);
+      });
+
+      const mockEvent = new Event('click');
+      retryButton.dispatchEvent(mockEvent);
+
+      // Wait for async operation to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Check that error modal is shown
+      const errorDiv = document.querySelector('.rephrase-error');
+      expect(errorDiv).toBeTruthy();
+      expect(errorDiv?.textContent).toContain('Service worker error');
+
+      // Clean up
+      chrome.runtime.lastError = undefined;
     });
 
     it('should handle modal backdrop click', () => {

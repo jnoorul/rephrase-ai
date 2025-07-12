@@ -33,7 +33,9 @@ export class BackgroundService {
 
   private setupMessageHandlers(): void {
     chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendResponse) => {
-      return this.handleMessage(message, sender, sendResponse);
+      // Handle async operations properly to prevent port closure
+      this.handleMessage(message, sender, sendResponse);
+      return true; // Keep message port open for async response
     });
   }
 
@@ -86,22 +88,30 @@ export class BackgroundService {
     message: ChromeMessage,
     sender: chrome.runtime.MessageSender,
     sendResponse: (response?: any) => void
-  ): Promise<boolean> {
-    switch (message.type) {
-      case 'REPHRASE_TEXT':
-        this.handleRephraseTextMessage(message, sendResponse);
-        return true; // Indicates async response
+  ): Promise<void> {
+    try {
+      switch (message.type) {
+        case 'REPHRASE_TEXT':
+          await this.handleRephraseTextMessage(message, sendResponse);
+          break;
 
-      case 'GET_SETTINGS':
-        this.handleGetSettingsMessage(sendResponse);
-        return true; // Indicates async response
+        case 'GET_SETTINGS':
+          await this.handleGetSettingsMessage(sendResponse);
+          break;
 
-      case 'SAVE_SETTINGS':
-        this.handleSaveSettingsMessage(message, sendResponse);
-        return true; // Indicates async response
+        case 'SAVE_SETTINGS':
+          await this.handleSaveSettingsMessage(message, sendResponse);
+          break;
 
-      default:
-        return false; // Indicates sync response
+        default:
+          sendResponse({ success: false, error: 'Unknown message type' });
+          break;
+      }
+    } catch (error) {
+      sendResponse({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      });
     }
   }
 

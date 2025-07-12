@@ -179,13 +179,40 @@ export class ContentScript {
 
     // Retry button
     const retryButton = modal.querySelector('.rephrase-button.retry') as HTMLButtonElement;
-    retryButton?.addEventListener('click', () => {
+    retryButton?.addEventListener('click', async () => {
       if (data.originalText) {
-        chrome.runtime.sendMessage({
-          type: 'REPHRASE_TEXT',
-          payload: { text: data.originalText },
-        }, (response) => {
-          if (response.success) {
+        // Show loading state
+        retryButton.disabled = true;
+        retryButton.textContent = 'Retrying...';
+        
+        try {
+          const response = await new Promise<any>((resolve, reject) => {
+            // Set a timeout to prevent hanging indefinitely
+            const timeoutId = setTimeout(() => {
+              reject(new Error('Request timed out. Please try again.'));
+            }, 30000); // 30 second timeout
+
+            chrome.runtime.sendMessage({
+              type: 'REPHRASE_TEXT',
+              payload: { text: data.originalText },
+            }, (response) => {
+              clearTimeout(timeoutId);
+              
+              if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+                return;
+              }
+              
+              if (!response) {
+                reject(new Error('No response received from service'));
+                return;
+              }
+              
+              resolve(response);
+            });
+          });
+          
+          if (response && response.success) {
             this.showModal({
               originalText: data.originalText,
               rephrasedText: response.rephrasedText,
@@ -193,10 +220,19 @@ export class ContentScript {
           } else {
             this.showModal({
               originalText: data.originalText,
-              error: response.error,
+              error: response?.error || 'Failed to rephrase text',
             });
           }
-        });
+        } catch (error) {
+          this.showModal({
+            originalText: data.originalText,
+            error: error instanceof Error ? error.message : 'Failed to rephrase text',
+          });
+        } finally {
+          // Reset button state
+          retryButton.disabled = false;
+          retryButton.textContent = 'Retry';
+        }
       }
     });
 

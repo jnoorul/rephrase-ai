@@ -285,13 +285,22 @@ describe('BackgroundService', () => {
       const messageHandler = (chrome.runtime.onMessage.addListener as jest.Mock).mock.calls[0][0];
 
       const mockSendResponse = jest.fn();
-      const result = await messageHandler(
+      const result = messageHandler(
         { type: 'UNKNOWN_TYPE' },
         { tab: { id: 1 } },
         mockSendResponse
       );
 
-      expect(result).toBe(false); // Indicates sync response
+      expect(result).toBe(true); // Always returns true to keep port open
+      
+      // Wait for async handling to complete
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
+      // Should send error response for unknown message type
+      expect(mockSendResponse).toHaveBeenCalledWith({
+        success: false,
+        error: 'Unknown message type'
+      });
     });
   });
 });
