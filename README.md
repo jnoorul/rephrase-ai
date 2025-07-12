@@ -6,7 +6,7 @@ A Chrome extension that allows users to rephrase text using AI services like Ope
 
 - **Text Selection**: Select any text on a webpage
 - **AI Integration**: Support for both OpenAI GPT and Anthropic Claude models
-- **Multiple Triggers**: Right-click context menu or keyboard shortcut (Ctrl+Shift+R / Cmd+Shift+R)
+- **Multiple Triggers**: Right-click context menu or keyboard shortcut (Ctrl+Shift+E / Cmd+Shift+E)
 - **Interactive Modal**: Preview original and rephrased text before accepting
 - **Customizable**: Configure API keys, models, and custom prompts
 - **Compatible**: Works on both Chrome and Microsoft Edge
@@ -70,7 +70,7 @@ npm run build
 ### Keyboard Shortcut
 
 1. Select text on any webpage
-2. Press `Ctrl+Shift+R` (Windows/Linux) or `Cmd+Shift+R` (Mac)
+2. Press `Ctrl+Shift+E` (Windows/Linux) or `Cmd+Shift+E` (Mac)
 3. Review and accept the rephrased text
 
 ### Modal Actions
