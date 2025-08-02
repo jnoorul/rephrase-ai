@@ -92,11 +92,23 @@ describe('BackgroundService', () => {
 
       expect(mockStorageService.getSettings).toHaveBeenCalled();
       expect(mockAPIClientFactory.rephrase).toHaveBeenCalledWith('Original text', mockSettings);
+      
+      // Verify loading modal is shown first
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
         type: 'SHOW_MODAL',
         payload: {
           originalText: 'Original text',
+          isLoading: true,
+        },
+      });
+      
+      // Verify update modal is sent with results
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
+        type: 'UPDATE_MODAL',
+        payload: {
+          originalText: 'Original text',
           rephrasedText: 'Rephrased text',
+          isLoading: false,
         },
       });
     });
@@ -133,11 +145,22 @@ describe('BackgroundService', () => {
         { id: 1 }
       );
 
+      // Verify loading modal is shown first
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
         type: 'SHOW_MODAL',
         payload: {
           originalText: 'Original text',
+          isLoading: true,
+        },
+      });
+      
+      // Verify update modal is sent with error
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
+        type: 'UPDATE_MODAL',
+        payload: {
+          originalText: 'Original text',
           error: 'API Error',
+          isLoading: false,
         },
       });
     });

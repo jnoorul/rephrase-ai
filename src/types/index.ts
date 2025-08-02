@@ -51,6 +51,7 @@ export type MessageType =
   | 'GET_SETTINGS'
   | 'SAVE_SETTINGS'
   | 'SHOW_MODAL'
+  | 'UPDATE_MODAL'
   | 'SHOW_SUMMARY_MODAL'
   | 'UPDATE_SUMMARY_MODAL'
   | 'HIDE_MODAL'
@@ -68,6 +69,7 @@ export interface ModalData {
   rephrasedText?: string;
   selection?: TextSelection;
   error?: string;
+  isLoading?: boolean;
 }
 
 export interface SummaryModalData {

@@ -86,33 +86,45 @@ export class BackgroundService {
   }
 
   private async handleRephraseRequest(text: string, tabId: number): Promise<void> {
+    // Show loading modal immediately
+    chrome.tabs.sendMessage(tabId, {
+      type: 'SHOW_MODAL',
+      payload: {
+        originalText: text,
+        isLoading: true,
+      },
+    });
+
     try {
       const settings = await storageService.getSettings();
       const result = await APIClientFactory.rephrase(text, settings);
 
       if (result.success) {
         chrome.tabs.sendMessage(tabId, {
-          type: 'SHOW_MODAL',
+          type: 'UPDATE_MODAL',
           payload: {
             originalText: text,
             rephrasedText: result.rephrasedText,
+            isLoading: false,
           },
         });
       } else {
         chrome.tabs.sendMessage(tabId, {
-          type: 'SHOW_MODAL',
+          type: 'UPDATE_MODAL',
           payload: {
             originalText: text,
             error: result.error,
+            isLoading: false,
           },
         });
       }
     } catch (error) {
       chrome.tabs.sendMessage(tabId, {
-        type: 'SHOW_MODAL',
+        type: 'UPDATE_MODAL',
         payload: {
           originalText: text,
           error: error instanceof Error ? error.message : 'Unknown error',
+          isLoading: false,
         },
       });
     }

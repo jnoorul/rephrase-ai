@@ -28,6 +28,10 @@ export class ContentScript {
         this.showModal(message.payload);
         return false; // Sync response
 
+      case 'UPDATE_MODAL':
+        this.updateModal(message.payload);
+        return false; // Sync response
+
       case 'SHOW_SUMMARY_MODAL':
         this.showSummaryModal(message.payload);
         return false; // Sync response
@@ -205,40 +209,61 @@ export class ContentScript {
     const modalContent = document.createElement('div');
     modalContent.className = 'rephrase-modal-content';
     
-    modalContent.innerHTML = `
-      <h3>Rephrase with AI</h3>
-      
-      <div class="rephrase-text-section">
-        <label>Original Text:</label>
-        <div class="text-content">${this.escapeHtml(data.originalText)}</div>
-      </div>
-      
-      ${data.error ? `
-        <div class="rephrase-error">
-          Error: ${this.escapeHtml(data.error)}
+    if (data.isLoading) {
+      modalContent.innerHTML = `
+        <h3>Rephrase with AI</h3>
+        <div class="rephrase-loading">
+          <div class="rephrase-loading-spinner"></div>
+          <div class="rephrase-loading-dots">
+            <div class="rephrase-loading-dot"></div>
+            <div class="rephrase-loading-dot"></div>
+            <div class="rephrase-loading-dot"></div>
+          </div>
+          <div class="rephrase-loading-text">Rephrasing text...</div>
+          <div class="rephrase-loading-subtext">Our AI is analyzing and rephrasing your text</div>
         </div>
-      ` : `
+      `;
+    } else {
+      modalContent.innerHTML = `
+        <h3>Rephrase with AI</h3>
+        
         <div class="rephrase-text-section">
-          <label>Rephrased Text:</label>
-          <div class="text-content">${this.escapeHtml(data.rephrasedText || '')}</div>
+          <label>Original Text:</label>
+          <div class="text-content">${this.escapeHtml(data.originalText)}</div>
         </div>
-      `}
-      
-      <div class="rephrase-buttons">
-        ${!data.error ? `
-          <button class="rephrase-button accept">Accept</button>
-          <button class="rephrase-button retry">Retry</button>
+        
+        ${data.error ? `
+          <div class="rephrase-error">
+            Error: ${this.escapeHtml(data.error)}
+          </div>
         ` : `
-          <button class="rephrase-button retry">Retry</button>
+          <div class="rephrase-text-section">
+            <label>Rephrased Text:</label>
+            <div class="text-content">${this.escapeHtml(data.rephrasedText || '')}</div>
+          </div>
         `}
-        <button class="rephrase-button cancel">Cancel</button>
-      </div>
-    `;
+        
+        <div class="rephrase-buttons">
+          ${!data.error ? `
+            <button class="rephrase-button accept">Accept</button>
+            <button class="rephrase-button retry">Retry</button>
+          ` : `
+            <button class="rephrase-button retry">Retry</button>
+          `}
+          <button class="rephrase-button cancel">Cancel</button>
+        </div>
+      `;
+    }
     
     modal.appendChild(modalContent);
     
-    // Add event listeners
-    this.addModalEventListeners(modal, data);
+    // Add event listeners (only if not loading)
+    if (!data.isLoading) {
+      this.addModalEventListeners(modal, data);
+    } else {
+      // Add minimal event listeners for loading state
+      this.addLoadingRephraseModalEventListeners(modal);
+    }
     
     return modal;
   }
@@ -380,9 +405,11 @@ export class ContentScript {
     const retryButton = modal.querySelector('.rephrase-button.retry') as HTMLButtonElement;
     retryButton?.addEventListener('click', async () => {
       if (data.originalText) {
-        // Show loading state
-        retryButton.disabled = true;
-        retryButton.textContent = 'Retrying...';
+        // Show loading modal immediately with beautiful animation
+        this.showModal({
+          originalText: data.originalText,
+          isLoading: true,
+        });
         
         try {
           const response = await new Promise<any>((resolve, reject) => {
@@ -412,25 +439,24 @@ export class ContentScript {
           });
           
           if (response && response.success) {
-            this.showModal({
+            this.updateModal({
               originalText: data.originalText,
               rephrasedText: response.rephrasedText,
+              isLoading: false,
             });
           } else {
-            this.showModal({
+            this.updateModal({
               originalText: data.originalText,
               error: response?.error || 'Failed to rephrase text',
+              isLoading: false,
             });
           }
         } catch (error) {
-          this.showModal({
+          this.updateModal({
             originalText: data.originalText,
             error: error instanceof Error ? error.message : 'Failed to rephrase text',
+            isLoading: false,
           });
-        } finally {
-          // Reset button state
-          retryButton.disabled = false;
-          retryButton.textContent = 'Retry';
         }
       }
     });
@@ -591,6 +617,21 @@ export class ContentScript {
     });
   }
 
+  private addLoadingRephraseModalEventListeners(modal: HTMLElement): void {
+    // Prevent closing when clicking modal content
+    const modalContent = modal.querySelector('.rephrase-modal-content');
+    modalContent?.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    // Allow closing by clicking outside for loading state (optional)
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        this.hideModal();
+      }
+    });
+  }
+
   private updateSummaryModal(data: SummaryModalData): void {
     const existingModal = document.querySelector('.summary-modal');
     if (!existingModal) return;
@@ -621,6 +662,48 @@ export class ContentScript {
 
     // Re-add event listeners for the updated content
     this.addSummaryModalEventListeners(existingModal as HTMLElement, data);
+  }
+
+  private updateModal(data: ModalData): void {
+    const existingModal = document.querySelector('.rephrase-modal');
+    if (!existingModal) return;
+
+    const modalContent = existingModal.querySelector('.rephrase-modal-content');
+    if (!modalContent) return;
+
+    // Update modal content with results
+    modalContent.innerHTML = `
+      <h3>Rephrase with AI</h3>
+      
+      <div class="rephrase-text-section">
+        <label>Original Text:</label>
+        <div class="text-content">${this.escapeHtml(data.originalText)}</div>
+      </div>
+      
+      ${data.error ? `
+        <div class="rephrase-error">
+          Error: ${this.escapeHtml(data.error)}
+        </div>
+      ` : `
+        <div class="rephrase-text-section">
+          <label>Rephrased Text:</label>
+          <div class="text-content">${this.escapeHtml(data.rephrasedText || '')}</div>
+        </div>
+      `}
+      
+      <div class="rephrase-buttons">
+        ${!data.error ? `
+          <button class="rephrase-button accept">Accept</button>
+          <button class="rephrase-button retry">Retry</button>
+        ` : `
+          <button class="rephrase-button retry">Retry</button>
+        `}
+        <button class="rephrase-button cancel">Cancel</button>
+      </div>
+    `;
+
+    // Re-add event listeners for the updated content
+    this.addModalEventListeners(existingModal as HTMLElement, data);
   }
 
   private escapeHtml(text: string): string {
