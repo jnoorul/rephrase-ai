@@ -224,6 +224,78 @@ describe('BackgroundService', () => {
       }, expect.any(Function));
 
       expect((mockAPIClientFactory as any).summarize).toHaveBeenCalledWith('Selected text', mockSettings);
+      
+      // Verify loading modal is shown first
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
+        type: 'SHOW_SUMMARY_MODAL',
+        payload: {
+          originalText: 'Selected text',
+          isLoading: true,
+        },
+      });
+      
+      // Verify update modal is sent with results
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
+        type: 'UPDATE_SUMMARY_MODAL',
+        payload: {
+          originalText: 'Selected text',
+          summaryText: 'Summary text',
+          isLoading: false,
+        },
+      });
+    });
+
+    it('should handle summarize-text command with API error', async () => {
+      const mockSettings = {
+        provider: 'anthropic' as const,
+        openaiApiKey: '',
+        claudeApiKey: 'test-key',
+        openaiModel: 'gpt-4',
+        claudeModel: 'claude-3-5-sonnet-20241022',
+        customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
+      };
+
+      mockStorageService.getSettings.mockResolvedValue(mockSettings);
+      (mockAPIClientFactory as any).summarize = jest.fn().mockResolvedValue({
+        success: false,
+        error: 'API Error',
+      });
+
+      chrome.tabs.query = jest.fn().mockImplementation((query, callback) => {
+        callback([{ id: 1 }]);
+      });
+
+      chrome.tabs.sendMessage = jest.fn().mockImplementation((tabId, message, callback) => {
+        if (message.type === 'GET_SELECTION') {
+          callback({ text: 'Selected text' });
+        }
+      });
+
+      backgroundService.initialize();
+
+      const commandHandler = (chrome.commands.onCommand.addListener as jest.Mock).mock.calls[0][0];
+
+      await commandHandler('summarize-text');
+
+      // Verify loading modal is shown first
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
+        type: 'SHOW_SUMMARY_MODAL',
+        payload: {
+          originalText: 'Selected text',
+          isLoading: true,
+        },
+      });
+      
+      // Verify update modal is sent with error
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
+        type: 'UPDATE_SUMMARY_MODAL',
+        payload: {
+          originalText: 'Selected text',
+          error: 'AI summary is not available at the moment, please try again',
+          isLoading: false,
+        },
+      });
     });
 
     it('should handle unknown command', async () => {

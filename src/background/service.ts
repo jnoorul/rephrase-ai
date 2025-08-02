@@ -197,33 +197,45 @@ export class BackgroundService {
   }
 
   private async handleSummaryRequest(text: string, tabId: number): Promise<void> {
+    // Show loading modal immediately
+    chrome.tabs.sendMessage(tabId, {
+      type: 'SHOW_SUMMARY_MODAL',
+      payload: {
+        originalText: text,
+        isLoading: true,
+      },
+    });
+
     try {
       const settings = await storageService.getSettings();
       const result = await APIClientFactory.summarize(text, settings);
 
       if (result.success) {
         chrome.tabs.sendMessage(tabId, {
-          type: 'SHOW_SUMMARY_MODAL',
+          type: 'UPDATE_SUMMARY_MODAL',
           payload: {
             originalText: text,
             summaryText: result.summaryText,
+            isLoading: false,
           },
         });
       } else {
         chrome.tabs.sendMessage(tabId, {
-          type: 'SHOW_SUMMARY_MODAL',
+          type: 'UPDATE_SUMMARY_MODAL',
           payload: {
             originalText: text,
             error: 'AI summary is not available at the moment, please try again',
+            isLoading: false,
           },
         });
       }
     } catch (error) {
       chrome.tabs.sendMessage(tabId, {
-        type: 'SHOW_SUMMARY_MODAL',
+        type: 'UPDATE_SUMMARY_MODAL',
         payload: {
           originalText: text,
           error: 'AI summary is not available at the moment, please try again',
+          isLoading: false,
         },
       });
     }

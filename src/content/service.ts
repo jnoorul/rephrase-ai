@@ -31,6 +31,10 @@ export class ContentScript {
         this.showSummaryModal(message.payload);
         return false; // Sync response
 
+      case 'UPDATE_SUMMARY_MODAL':
+        this.updateSummaryModal(message.payload);
+        return false; // Sync response
+
       case 'HIDE_MODAL':
         this.hideModal();
         return false; // Sync response
@@ -245,30 +249,51 @@ export class ContentScript {
     const modalContent = document.createElement('div');
     modalContent.className = 'summary-modal-content';
     
-    modalContent.innerHTML = `
-      <h3>AI Summary</h3>
-      
-      ${data.error ? `
-        <div class="summary-error">
-          AI summary is not available at the moment, please try again
+    if (data.isLoading) {
+      modalContent.innerHTML = `
+        <h3>AI Summary</h3>
+        <div class="summary-loading">
+          <div class="summary-loading-spinner"></div>
+          <div class="summary-loading-dots">
+            <div class="summary-loading-dot"></div>
+            <div class="summary-loading-dot"></div>
+            <div class="summary-loading-dot"></div>
+          </div>
+          <div class="summary-loading-text">Analyzing content...</div>
+          <div class="summary-loading-subtext">Our AI is reading and summarizing the content for you</div>
         </div>
-      ` : `
-        <div class="summary-content">
-          ${this.formatSummaryText(data.summaryText || '')}
+      `;
+    } else {
+      modalContent.innerHTML = `
+        <h3>AI Summary</h3>
+        
+        ${data.error ? `
+          <div class="summary-error">
+            AI summary is not available at the moment, please try again
+          </div>
+        ` : `
+          <div class="summary-content">
+            ${this.formatSummaryText(data.summaryText || '')}
+          </div>
+        `}
+        
+        <div class="summary-buttons">
+          <button class="summary-button close">Close</button>
+          <button class="summary-button retry">Retry</button>
+          ${!data.error ? `<button class="summary-button copy">Copy</button>` : ''}
         </div>
-      `}
-      
-      <div class="summary-buttons">
-        <button class="summary-button close">Close</button>
-        <button class="summary-button retry">Retry</button>
-        ${!data.error ? `<button class="summary-button copy">Copy</button>` : ''}
-      </div>
-    `;
+      `;
+    }
     
     modal.appendChild(modalContent);
     
-    // Add event listeners
-    this.addSummaryModalEventListeners(modal, data);
+    // Add event listeners (only if not loading)
+    if (!data.isLoading) {
+      this.addSummaryModalEventListeners(modal, data);
+    } else {
+      // Add minimal event listeners for loading state
+      this.addLoadingModalEventListeners(modal);
+    }
     
     return modal;
   }
@@ -513,6 +538,53 @@ export class ContentScript {
       }
     };
     document.addEventListener('keydown', escapeHandler);
+  }
+
+  private addLoadingModalEventListeners(modal: HTMLElement): void {
+    // Prevent closing when clicking modal content
+    const modalContent = modal.querySelector('.summary-modal-content');
+    modalContent?.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    // Allow closing by clicking outside for loading state (optional)
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        this.hideModal();
+      }
+    });
+  }
+
+  private updateSummaryModal(data: SummaryModalData): void {
+    const existingModal = document.querySelector('.summary-modal');
+    if (!existingModal) return;
+
+    const modalContent = existingModal.querySelector('.summary-modal-content');
+    if (!modalContent) return;
+
+    // Update modal content with results
+    modalContent.innerHTML = `
+      <h3>AI Summary</h3>
+      
+      ${data.error ? `
+        <div class="summary-error">
+          AI summary is not available at the moment, please try again
+        </div>
+      ` : `
+        <div class="summary-content">
+          ${this.formatSummaryText(data.summaryText || '')}
+        </div>
+      `}
+      
+      <div class="summary-buttons">
+        <button class="summary-button close">Close</button>
+        <button class="summary-button retry">Retry</button>
+        ${!data.error ? `<button class="summary-button copy">Copy</button>` : ''}
+      </div>
+    `;
+
+    // Re-add event listeners for the updated content
+    this.addSummaryModalEventListeners(existingModal as HTMLElement, data);
   }
 
   private escapeHtml(text: string): string {

@@ -52,6 +52,7 @@ export type MessageType =
   | 'SAVE_SETTINGS'
   | 'SHOW_MODAL'
   | 'SHOW_SUMMARY_MODAL'
+  | 'UPDATE_SUMMARY_MODAL'
   | 'HIDE_MODAL'
   | 'REPLACE_TEXT'
   | 'GET_SELECTION'
@@ -73,6 +74,7 @@ export interface SummaryModalData {
   originalText: string;
   summaryText?: string;
   error?: string;
+  isLoading?: boolean;
 }
 
 export interface SummaryRequest {
