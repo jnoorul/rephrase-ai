@@ -1,4 +1,5 @@
 import { TextSelection, ChromeMessage, ModalData, SummaryModalData } from '../types';
+import { marked } from 'marked';
 
 export class ContentScript {
   private currentSelection: TextSelection | null = null;
@@ -299,23 +300,57 @@ export class ContentScript {
   }
 
   private formatSummaryText(text: string): string {
-    // Convert plain text to formatted HTML with paragraphs and basic formatting
-    return text
-      .split('\n\n') // Split by double newlines for paragraphs
-      .map(paragraph => {
-        const trimmed = paragraph.trim();
-        if (!trimmed) return '';
-        
-        // Check if it looks like a heading (starts with #, all caps, or short and followed by content)
-        if (trimmed.match(/^#+\s/) || trimmed.match(/^[A-Z\s]{3,30}:?\s*$/) || 
-            (trimmed.length < 50 && !trimmed.endsWith('.'))) {
-          return `<h4>${this.escapeHtml(trimmed.replace(/^#+\s*/, ''))}</h4>`;
-        }
-        
-        return `<p>${this.escapeHtml(trimmed)}</p>`;
-      })
-      .filter(p => p) // Remove empty paragraphs
-      .join('');
+    // Configure marked for security and consistent output
+    marked.setOptions({
+      gfm: true,         // Enable GitHub Flavored Markdown
+      breaks: true,      // Enable line breaks
+    });
+
+    try {
+      // First, try to parse as markdown
+      let htmlContent = marked.parse(text) as string;
+      
+      // If the text doesn't contain markdown syntax, fall back to simple paragraph formatting
+      if (!this.containsMarkdown(text)) {
+        htmlContent = text
+          .split('\n\n') // Split by double newlines for paragraphs
+          .map(paragraph => {
+            const trimmed = paragraph.trim();
+            if (!trimmed) return '';
+            
+            // Check if it looks like a heading (all caps, or short and followed by content)
+            if (trimmed.match(/^[A-Z\s]{3,30}:?\s*$/) || 
+                (trimmed.length < 50 && !trimmed.endsWith('.'))) {
+              return `<h4>${this.escapeHtml(trimmed)}</h4>`;
+            }
+            
+            return `<p>${this.escapeHtml(trimmed)}</p>`;
+          })
+          .filter(p => p) // Remove empty paragraphs
+          .join('');
+      }
+      
+      return htmlContent;
+    } catch (error) {
+      console.error('Error parsing markdown:', error);
+      // Fallback to escaped text
+      return `<p>${this.escapeHtml(text)}</p>`;
+    }
+  }
+
+  private containsMarkdown(text: string): boolean {
+    // Check for common markdown patterns
+    const markdownPatterns = [
+      /\*\*.*?\*\*/,  // **bold**
+      /\*.*?\*/,      // *italic*
+      /`.*?`/,        // `code`
+      /^#+\s/m,       // # headings
+      /^-\s/m,        // - lists
+      /^\d+\.\s/m,    // 1. numbered lists
+      /\[.*?\]\(.*?\)/, // [links](url)
+    ];
+    
+    return markdownPatterns.some(pattern => pattern.test(text));
   }
 
   private addModalEventListeners(modal: HTMLElement, data: ModalData): void {
