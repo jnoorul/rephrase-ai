@@ -51,8 +51,16 @@ When making changes to the codebase:
 2. Run tests after each change: `npm test`
 3. Run build to ensure compilation works: `npm run build`
 4. Run linting and type checking: `npm run lint` and `npm run type-check`
-5. Commit and push changes frequently to GitHub without waiting for explicit instructions
+5. **IMPORTANT**: Always ask for explicit permission before committing or pushing changes to git
 6. Use descriptive commit messages that explain the purpose of the change
+
+## Git Workflow Protocol
+
+**CRITICAL**: Never commit or push changes without explicit user permission. Always:
+1. Complete all requested changes and testing
+2. Ask the user for permission before any git operations
+3. Only proceed with commits/pushes after receiving explicit approval
+4. This applies to all git commands including `git add`, `git commit`, and `git push`
 
 ## Important Files
 - `public/manifest.json` - Chrome extension manifest configuration
