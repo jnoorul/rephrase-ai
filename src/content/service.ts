@@ -742,10 +742,10 @@ export class ContentScript {
     this.selectionContextMenu = this.createSelectionContextMenu(selection);
     document.body.appendChild(this.selectionContextMenu);
 
-    // Position the menu above the selection
+    // Position the menu at the top-left corner of the selection
     const menuRect = this.selectionContextMenu.getBoundingClientRect();
     let top = rect.top - menuRect.height - 10;
-    let left = rect.left + (rect.width / 2) - (menuRect.width / 2);
+    let left = rect.left;
 
     // Adjust position if menu would go off-screen
     if (top < 10) {
