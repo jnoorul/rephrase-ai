@@ -304,9 +304,9 @@ export class ContentScript {
         `}
         
         <div class="summary-buttons">
-          <button class="summary-button close">Close</button>
-          <button class="summary-button retry">Retry</button>
           ${!data.error ? `<button class="summary-button copy">Copy</button>` : ''}
+          <button class="summary-button retry">Retry</button>
+          <button class="summary-button close">Close</button>
         </div>
       `;
     }
@@ -654,9 +654,9 @@ export class ContentScript {
       `}
       
       <div class="summary-buttons">
-        <button class="summary-button close">Close</button>
-        <button class="summary-button retry">Retry</button>
         ${!data.error ? `<button class="summary-button copy">Copy</button>` : ''}
+        <button class="summary-button retry">Retry</button>
+        <button class="summary-button close">Close</button>
       </div>
     `;
 
