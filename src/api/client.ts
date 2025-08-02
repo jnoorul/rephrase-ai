@@ -2,7 +2,7 @@ import { ExtensionSettings, RephraseResponse, SummaryResponse, OpenAIResponse, C
 
 const DEFAULT_SYSTEM_PROMPT = 'You are a helpful assistant that rephrases text while maintaining the original meaning. Provide only the rephrased text without additional commentary.';
 
-const DEFAULT_SUMMARY_PROMPT = 'You are a helpful assistant that creates brief, clear summaries. Summarize the following text in a concise manner with proper headings and paragraphs where appropriate.';
+const DEFAULT_SUMMARY_PROMPT = 'You are a helpful assistant that creates brief, clear summaries. Please format your response using proper markdown syntax with # for main headings, ## for subheadings, **bold** for emphasis, and - for bullet points. Summarize the following text in a concise manner.';
 
 export class OpenAIClient {
   private readonly baseUrl = 'https://api.openai.com/v1';

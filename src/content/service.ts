@@ -332,51 +332,19 @@ export class ContentScript {
     });
 
     try {
-      // First, try to parse as markdown
-      let htmlContent = marked.parse(text) as string;
-      
-      // If the text doesn't contain markdown syntax, fall back to simple paragraph formatting
-      if (!this.containsMarkdown(text)) {
-        htmlContent = text
-          .split('\n\n') // Split by double newlines for paragraphs
-          .map(paragraph => {
-            const trimmed = paragraph.trim();
-            if (!trimmed) return '';
-            
-            // Check if it looks like a heading (all caps, or short and followed by content)
-            if (trimmed.match(/^[A-Z\s]{3,30}:?\s*$/) || 
-                (trimmed.length < 50 && !trimmed.endsWith('.'))) {
-              return `<h4>${this.escapeHtml(trimmed)}</h4>`;
-            }
-            
-            return `<p>${this.escapeHtml(trimmed)}</p>`;
-          })
-          .filter(p => p) // Remove empty paragraphs
-          .join('');
-      }
-      
+      // Trust marked.js to handle all markdown formatting correctly
+      // The AI prompt now explicitly requests proper markdown format
+      const htmlContent = marked.parse(text) as string;
       return htmlContent;
     } catch (error) {
       console.error('Error parsing markdown:', error);
-      // Fallback to escaped text
+      // Fallback to simple paragraph formatting only on actual errors
       return `<p>${this.escapeHtml(text)}</p>`;
     }
   }
 
-  private containsMarkdown(text: string): boolean {
-    // Check for common markdown patterns
-    const markdownPatterns = [
-      /\*\*.*?\*\*/,  // **bold**
-      /\*.*?\*/,      // *italic*
-      /`.*?`/,        // `code`
-      /^#+\s/m,       // # headings
-      /^-\s/m,        // - lists
-      /^\d+\.\s/m,    // 1. numbered lists
-      /\[.*?\]\(.*?\)/, // [links](url)
-    ];
-    
-    return markdownPatterns.some(pattern => pattern.test(text));
-  }
+
+
 
   private addModalEventListeners(modal: HTMLElement, data: ModalData): void {
     // Close modal when clicking outside
