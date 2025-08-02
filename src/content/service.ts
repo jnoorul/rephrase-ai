@@ -3,14 +3,45 @@ import { marked } from 'marked';
 
 export class ContentScript {
   private currentSelection: TextSelection | null = null;
+  private selectionContextMenu: HTMLElement | null = null;
+  private isProcessingMenuAction: boolean = false;
 
   initialize(): void {
     this.setupMessageHandlers();
+    this.setupSelectionHandler();
   }
 
   private setupMessageHandlers(): void {
     chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendResponse) => {
       return this.handleMessage(message, sender, sendResponse);
+    });
+  }
+
+  private setupSelectionHandler(): void {
+    // Listen for text selection changes
+    document.addEventListener('mouseup', (e) => {
+      setTimeout(() => this.handleTextSelection(e), 10);
+    });
+
+    // Listen for keyboard selection changes
+    document.addEventListener('keyup', (e) => {
+      if (e.shiftKey || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || 
+          e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        setTimeout(() => this.handleTextSelection(e), 10);
+      }
+    });
+
+    // Hide menu when clicking outside or pressing escape
+    document.addEventListener('mousedown', (e) => {
+      if (this.selectionContextMenu && !this.selectionContextMenu.contains(e.target as Node)) {
+        this.hideSelectionContextMenu();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.hideSelectionContextMenu();
+      }
     });
   }
 
@@ -678,6 +709,252 @@ export class ContentScript {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  private handleTextSelection(event: MouseEvent | KeyboardEvent): void {
+    // Don't show menu if we're currently processing a menu action
+    if (this.isProcessingMenuAction) {
+      return;
+    }
+
+    const selection = this.getSelection();
+    
+    if (selection && selection.text.length > 0) {
+      // Show context menu for valid text selection
+      this.showSelectionContextMenu(selection, event);
+    } else {
+      // Hide context menu if no text is selected
+      this.hideSelectionContextMenu();
+    }
+  }
+
+  private showSelectionContextMenu(selection: TextSelection, event: MouseEvent | KeyboardEvent): void {
+    // Remove existing menu if present
+    this.hideSelectionContextMenu();
+
+    // Get selection position for menu placement
+    const range = selection.range;
+    if (!range) return;
+    
+    const rect = range.getBoundingClientRect();
+    
+    // Create context menu
+    this.selectionContextMenu = this.createSelectionContextMenu(selection);
+    document.body.appendChild(this.selectionContextMenu);
+
+    // Position the menu above the selection
+    const menuRect = this.selectionContextMenu.getBoundingClientRect();
+    let top = rect.top - menuRect.height - 10;
+    let left = rect.left + (rect.width / 2) - (menuRect.width / 2);
+
+    // Adjust position if menu would go off-screen
+    if (top < 10) {
+      top = rect.bottom + 10; // Position below selection instead
+    }
+    if (left < 10) {
+      left = 10;
+    }
+    if (left + menuRect.width > window.innerWidth - 10) {
+      left = window.innerWidth - menuRect.width - 10;
+    }
+
+    this.selectionContextMenu.style.top = `${top + window.scrollY}px`;
+    this.selectionContextMenu.style.left = `${left + window.scrollX}px`;
+  }
+
+  private hideSelectionContextMenu(): void {
+    if (this.selectionContextMenu) {
+      this.selectionContextMenu.remove();
+      this.selectionContextMenu = null;
+    }
+  }
+
+  private createSelectionContextMenu(selection: TextSelection): HTMLElement {
+    const menu = document.createElement('div');
+    menu.className = 'selection-context-menu';
+
+    // Rephrase button
+    const rephraseButton = document.createElement('button');
+    rephraseButton.className = 'selection-menu-button';
+    rephraseButton.innerHTML = `
+      <svg class="selection-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 3v5h5"/>
+        <path d="M21 21v-5h-5"/>
+        <path d="M8 8l13 13"/>
+        <path d="M8 16l5-5"/>
+      </svg>
+      <span>Rephrase</span>
+    `;
+    rephraseButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Set flag to prevent menu from reappearing
+      this.isProcessingMenuAction = true;
+      
+      // Clear text selection to prevent menu from reappearing
+      window.getSelection()?.removeAllRanges();
+      
+      // Hide menu
+      this.hideSelectionContextMenu();
+      
+      // Store selection and trigger action
+      this.currentSelection = selection;
+      this.triggerRephrase(selection.text);
+      
+      // Reset flag after a brief delay to allow event processing
+      setTimeout(() => {
+        this.isProcessingMenuAction = false;
+      }, 100);
+    });
+
+    // Summarize button
+    const summarizeButton = document.createElement('button');
+    summarizeButton.className = 'selection-menu-button';
+    summarizeButton.innerHTML = `
+      <svg class="selection-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-4"/>
+        <path d="M9 7l3-3 3 3"/>
+        <path d="M12 4v12"/>
+      </svg>
+      <span>Summarize</span>
+    `;
+    summarizeButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Set flag to prevent menu from reappearing
+      this.isProcessingMenuAction = true;
+      
+      // Clear text selection to prevent menu from reappearing
+      window.getSelection()?.removeAllRanges();
+      
+      // Hide menu
+      this.hideSelectionContextMenu();
+      
+      // Trigger action
+      this.triggerSummarize(selection.text);
+      
+      // Reset flag after a brief delay to allow event processing
+      setTimeout(() => {
+        this.isProcessingMenuAction = false;
+      }, 100);
+    });
+
+    menu.appendChild(rephraseButton);
+    menu.appendChild(summarizeButton);
+
+    return menu;
+  }
+
+  private async triggerRephrase(text: string): Promise<void> {
+    // Show loading modal immediately
+    this.showModal({
+      originalText: text,
+      isLoading: true,
+    });
+    
+    try {
+      const response = await new Promise<any>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Request timed out. Please try again.'));
+        }, 30000);
+
+        chrome.runtime.sendMessage({
+          type: 'REPHRASE_TEXT',
+          payload: { text },
+        }, (response) => {
+          clearTimeout(timeoutId);
+          
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          
+          if (!response) {
+            reject(new Error('No response received from service'));
+            return;
+          }
+          
+          resolve(response);
+        });
+      });
+      
+      if (response && response.success) {
+        this.updateModal({
+          originalText: text,
+          rephrasedText: response.rephrasedText,
+          isLoading: false,
+        });
+      } else {
+        this.updateModal({
+          originalText: text,
+          error: response?.error || 'Failed to rephrase text',
+          isLoading: false,
+        });
+      }
+    } catch (error) {
+      this.updateModal({
+        originalText: text,
+        error: error instanceof Error ? error.message : 'Failed to rephrase text',
+        isLoading: false,
+      });
+    }
+  }
+
+  private async triggerSummarize(text: string): Promise<void> {
+    // Show loading modal immediately
+    this.showSummaryModal({
+      originalText: text,
+      isLoading: true,
+    });
+    
+    try {
+      const response = await new Promise<any>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Request timed out. Please try again.'));
+        }, 60000);
+
+        chrome.runtime.sendMessage({
+          type: 'SUMMARIZE_TEXT',
+          payload: { text },
+        }, (response) => {
+          clearTimeout(timeoutId);
+          
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          
+          if (!response) {
+            reject(new Error('No response received from service'));
+            return;
+          }
+          
+          resolve(response);
+        });
+      });
+      
+      if (response && response.success) {
+        this.updateSummaryModal({
+          originalText: text,
+          summaryText: response.summaryText,
+          isLoading: false,
+        });
+      } else {
+        this.updateSummaryModal({
+          originalText: text,
+          error: 'AI summary is not available at the moment, please try again',
+          isLoading: false,
+        });
+      }
+    } catch (error) {
+      this.updateSummaryModal({
+        originalText: text,
+        error: 'AI summary is not available at the moment, please try again',
+        isLoading: false,
+      });
+    }
   }
 }
 
