@@ -19,26 +19,31 @@ export class ContentScript {
 
   private setupSelectionHandler(): void {
     // Listen for text selection changes
-    document.addEventListener('mouseup', (e) => {
+    document.addEventListener('mouseup', e => {
       setTimeout(() => this.handleTextSelection(e), 10);
     });
 
     // Listen for keyboard selection changes
-    document.addEventListener('keyup', (e) => {
-      if (e.shiftKey || e.key === 'ArrowLeft' || e.key === 'ArrowRight' || 
-          e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    document.addEventListener('keyup', e => {
+      if (
+        e.shiftKey ||
+        e.key === 'ArrowLeft' ||
+        e.key === 'ArrowRight' ||
+        e.key === 'ArrowUp' ||
+        e.key === 'ArrowDown'
+      ) {
         setTimeout(() => this.handleTextSelection(e), 10);
       }
     });
 
     // Hide menu when clicking outside or pressing escape
-    document.addEventListener('mousedown', (e) => {
+    document.addEventListener('mousedown', e => {
       if (this.selectionContextMenu && !this.selectionContextMenu.contains(e.target as Node)) {
         this.hideSelectionContextMenu();
       }
     });
 
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         this.hideSelectionContextMenu();
       }
@@ -113,16 +118,17 @@ export class ContentScript {
 
     const range = selection.getRangeAt(0);
     const text = range.toString().trim();
-    
+
     if (!text) {
       return null;
     }
 
     return {
       text,
-      element: range.startContainer.nodeType === Node.TEXT_NODE 
-        ? range.startContainer.parentElement! 
-        : range.startContainer as HTMLElement,
+      element:
+        range.startContainer.nodeType === Node.TEXT_NODE
+          ? range.startContainer.parentElement!
+          : (range.startContainer as HTMLElement),
       range,
     };
   }
@@ -132,7 +138,7 @@ export class ContentScript {
       selection.range.deleteContents();
       const textNode = document.createTextNode(newText);
       selection.range.insertNode(textNode);
-      
+
       // Clear the selection and place cursor at the end
       const newSelection = window.getSelection();
       if (newSelection) {
@@ -147,10 +153,10 @@ export class ContentScript {
 
   showModal(data: ModalData): void {
     this.hideModal(); // Remove existing modal if any
-    
+
     const modal = this.createModal(data);
     document.body.appendChild(modal);
-    
+
     // Store current selection for later use
     this.currentSelection = this.getSelection();
   }
@@ -173,14 +179,15 @@ export class ContentScript {
       '.article-content',
       '.entry-content',
       '#content',
-      '#main-content'
+      '#main-content',
     ];
 
     for (const selector of contentSelectors) {
       const element = document.querySelector(selector);
       if (element) {
         const text = this.extractTextFromElement(element as HTMLElement);
-        if (text.length > 100) { // Ensure we have substantial content
+        if (text.length > 100) {
+          // Ensure we have substantial content
           return text;
         }
       }
@@ -215,7 +222,7 @@ export class ContentScript {
       '.ad',
       '[role="navigation"]',
       '[role="banner"]',
-      '[role="contentinfo"]'
+      '[role="contentinfo"]',
     ];
 
     unwantedSelectors.forEach(selector => {
@@ -228,7 +235,7 @@ export class ContentScript {
 
   showSummaryModal(data: SummaryModalData): void {
     this.hideModal(); // Remove existing modal if any
-    
+
     const modal = this.createSummaryModal(data);
     document.body.appendChild(modal);
   }
@@ -236,10 +243,10 @@ export class ContentScript {
   private createModal(data: ModalData): HTMLElement {
     const modal = document.createElement('div');
     modal.className = 'rephrase-modal';
-    
+
     const modalContent = document.createElement('div');
     modalContent.className = 'rephrase-modal-content';
-    
+
     if (data.isLoading) {
       modalContent.innerHTML = `
         <h3>Rephrase with AI</h3>
@@ -263,31 +270,39 @@ export class ContentScript {
           <div class="text-content">${this.escapeHtml(data.originalText)}</div>
         </div>
         
-        ${data.error ? `
+        ${
+          data.error
+            ? `
           <div class="rephrase-error">
             Error: ${this.escapeHtml(data.error)}
           </div>
-        ` : `
+        `
+            : `
           <div class="rephrase-text-section">
             <label>Rephrased Text:</label>
             <div class="text-content">${this.escapeHtml(data.rephrasedText || '')}</div>
           </div>
-        `}
+        `
+        }
         
         <div class="rephrase-buttons">
-          ${!data.error ? `
+          ${
+            !data.error
+              ? `
             <button class="rephrase-button accept">Accept</button>
             <button class="rephrase-button retry">Retry</button>
-          ` : `
+          `
+              : `
             <button class="rephrase-button retry">Retry</button>
-          `}
+          `
+          }
           <button class="rephrase-button cancel">Cancel</button>
         </div>
       `;
     }
-    
+
     modal.appendChild(modalContent);
-    
+
     // Add event listeners (only if not loading)
     if (!data.isLoading) {
       this.addModalEventListeners(modal, data);
@@ -295,17 +310,17 @@ export class ContentScript {
       // Add minimal event listeners for loading state
       this.addLoadingRephraseModalEventListeners(modal);
     }
-    
+
     return modal;
   }
 
   private createSummaryModal(data: SummaryModalData): HTMLElement {
     const modal = document.createElement('div');
     modal.className = 'summary-modal';
-    
+
     const modalContent = document.createElement('div');
     modalContent.className = 'summary-modal-content';
-    
+
     if (data.isLoading) {
       modalContent.innerHTML = `
         <h3>AI Summary</h3>
@@ -324,15 +339,19 @@ export class ContentScript {
       modalContent.innerHTML = `
         <h3>AI Summary</h3>
         
-        ${data.error ? `
+        ${
+          data.error
+            ? `
           <div class="summary-error">
             AI summary is not available at the moment, please try again
           </div>
-        ` : `
+        `
+            : `
           <div class="summary-content">
             ${this.formatSummaryText(data.summaryText || '')}
           </div>
-        `}
+        `
+        }
         
         <div class="summary-buttons">
           ${!data.error ? `<button class="summary-button copy">Copy</button>` : ''}
@@ -341,9 +360,9 @@ export class ContentScript {
         </div>
       `;
     }
-    
+
     modal.appendChild(modalContent);
-    
+
     // Add event listeners (only if not loading)
     if (!data.isLoading) {
       this.addSummaryModalEventListeners(modal, data);
@@ -351,15 +370,15 @@ export class ContentScript {
       // Add minimal event listeners for loading state
       this.addLoadingModalEventListeners(modal);
     }
-    
+
     return modal;
   }
 
   private formatSummaryText(text: string): string {
     // Configure marked for security and consistent output
     marked.setOptions({
-      gfm: true,         // Enable GitHub Flavored Markdown
-      breaks: true,      // Enable line breaks
+      gfm: true, // Enable GitHub Flavored Markdown
+      breaks: true, // Enable line breaks
     });
 
     try {
@@ -374,12 +393,9 @@ export class ContentScript {
     }
   }
 
-
-
-
   private addModalEventListeners(modal: HTMLElement, data: ModalData): void {
     // Close modal when clicking outside
-    modal.addEventListener('click', (e) => {
+    modal.addEventListener('click', e => {
       if (e.target === modal) {
         this.hideModal();
       }
@@ -387,7 +403,7 @@ export class ContentScript {
 
     // Prevent closing when clicking modal content
     const modalContent = modal.querySelector('.rephrase-modal-content');
-    modalContent?.addEventListener('click', (e) => {
+    modalContent?.addEventListener('click', e => {
       e.stopPropagation();
     });
 
@@ -409,7 +425,7 @@ export class ContentScript {
           originalText: data.originalText,
           isLoading: true,
         });
-        
+
         try {
           const response = await new Promise<any>((resolve, reject) => {
             // Set a timeout to prevent hanging indefinitely
@@ -417,26 +433,29 @@ export class ContentScript {
               reject(new Error('Request timed out. Please try again.'));
             }, 30000); // 30 second timeout
 
-            chrome.runtime.sendMessage({
-              type: 'REPHRASE_TEXT',
-              payload: { text: data.originalText },
-            }, (response) => {
-              clearTimeout(timeoutId);
-              
-              if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-                return;
+            chrome.runtime.sendMessage(
+              {
+                type: 'REPHRASE_TEXT',
+                payload: { text: data.originalText },
+              },
+              response => {
+                clearTimeout(timeoutId);
+
+                if (chrome.runtime.lastError) {
+                  reject(new Error(chrome.runtime.lastError.message));
+                  return;
+                }
+
+                if (!response) {
+                  reject(new Error('No response received from service'));
+                  return;
+                }
+
+                resolve(response);
               }
-              
-              if (!response) {
-                reject(new Error('No response received from service'));
-                return;
-              }
-              
-              resolve(response);
-            });
+            );
           });
-          
+
           if (response && response.success) {
             this.updateModal({
               originalText: data.originalText,
@@ -467,7 +486,7 @@ export class ContentScript {
     });
 
     // Escape key to close modal
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         this.hideModal();
       }
@@ -476,7 +495,7 @@ export class ContentScript {
 
   private addSummaryModalEventListeners(modal: HTMLElement, data: SummaryModalData): void {
     // Close modal when clicking outside
-    modal.addEventListener('click', (e) => {
+    modal.addEventListener('click', e => {
       if (e.target === modal) {
         this.hideModal();
       }
@@ -484,7 +503,7 @@ export class ContentScript {
 
     // Prevent closing when clicking modal content
     const modalContent = modal.querySelector('.summary-modal-content');
-    modalContent?.addEventListener('click', (e) => {
+    modalContent?.addEventListener('click', e => {
       e.stopPropagation();
     });
 
@@ -503,7 +522,7 @@ export class ContentScript {
           originalText: data.originalText,
           isLoading: true,
         });
-        
+
         try {
           const response = await new Promise<any>((resolve, reject) => {
             // Set a timeout to prevent hanging indefinitely
@@ -511,26 +530,29 @@ export class ContentScript {
               reject(new Error('Request timed out. Please try again.'));
             }, 60000); // 60 second timeout for summary (longer than rephrase)
 
-            chrome.runtime.sendMessage({
-              type: 'SUMMARIZE_TEXT',
-              payload: { text: data.originalText },
-            }, (response) => {
-              clearTimeout(timeoutId);
-              
-              if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-                return;
+            chrome.runtime.sendMessage(
+              {
+                type: 'SUMMARIZE_TEXT',
+                payload: { text: data.originalText },
+              },
+              response => {
+                clearTimeout(timeoutId);
+
+                if (chrome.runtime.lastError) {
+                  reject(new Error(chrome.runtime.lastError.message));
+                  return;
+                }
+
+                if (!response) {
+                  reject(new Error('No response received from service'));
+                  return;
+                }
+
+                resolve(response);
               }
-              
-              if (!response) {
-                reject(new Error('No response received from service'));
-                return;
-              }
-              
-              resolve(response);
-            });
+            );
           });
-          
+
           if (response && response.success) {
             this.updateSummaryModal({
               originalText: data.originalText,
@@ -562,12 +584,12 @@ export class ContentScript {
           // Get plain text version of the summary
           const plainText = data.summaryText.replace(/<[^>]*>/g, '').replace(/\n\s*\n/g, '\n\n');
           await navigator.clipboard.writeText(plainText);
-          
+
           // Show feedback
           const originalText = copyButton.textContent;
           copyButton.textContent = 'Copied!';
           copyButton.style.backgroundColor = '#4CAF50';
-          
+
           setTimeout(() => {
             copyButton.textContent = originalText;
             copyButton.style.backgroundColor = '';
@@ -581,7 +603,7 @@ export class ContentScript {
           textArea.select();
           document.execCommand('copy');
           document.body.removeChild(textArea);
-          
+
           const originalText = copyButton.textContent;
           copyButton.textContent = 'Copied!';
           setTimeout(() => {
@@ -604,12 +626,12 @@ export class ContentScript {
   private addLoadingModalEventListeners(modal: HTMLElement): void {
     // Prevent closing when clicking modal content
     const modalContent = modal.querySelector('.summary-modal-content');
-    modalContent?.addEventListener('click', (e) => {
+    modalContent?.addEventListener('click', e => {
       e.stopPropagation();
     });
 
     // Allow closing by clicking outside for loading state (optional)
-    modal.addEventListener('click', (e) => {
+    modal.addEventListener('click', e => {
       if (e.target === modal) {
         this.hideModal();
       }
@@ -619,12 +641,12 @@ export class ContentScript {
   private addLoadingRephraseModalEventListeners(modal: HTMLElement): void {
     // Prevent closing when clicking modal content
     const modalContent = modal.querySelector('.rephrase-modal-content');
-    modalContent?.addEventListener('click', (e) => {
+    modalContent?.addEventListener('click', e => {
       e.stopPropagation();
     });
 
     // Allow closing by clicking outside for loading state (optional)
-    modal.addEventListener('click', (e) => {
+    modal.addEventListener('click', e => {
       if (e.target === modal) {
         this.hideModal();
       }
@@ -642,15 +664,19 @@ export class ContentScript {
     modalContent.innerHTML = `
       <h3>AI Summary</h3>
       
-      ${data.error ? `
+      ${
+        data.error
+          ? `
         <div class="summary-error">
           AI summary is not available at the moment, please try again
         </div>
-      ` : `
+      `
+          : `
         <div class="summary-content">
           ${this.formatSummaryText(data.summaryText || '')}
         </div>
-      `}
+      `
+      }
       
       <div class="summary-buttons">
         ${!data.error ? `<button class="summary-button copy">Copy</button>` : ''}
@@ -679,24 +705,32 @@ export class ContentScript {
         <div class="text-content">${this.escapeHtml(data.originalText)}</div>
       </div>
       
-      ${data.error ? `
+      ${
+        data.error
+          ? `
         <div class="rephrase-error">
           Error: ${this.escapeHtml(data.error)}
         </div>
-      ` : `
+      `
+          : `
         <div class="rephrase-text-section">
           <label>Rephrased Text:</label>
           <div class="text-content">${this.escapeHtml(data.rephrasedText || '')}</div>
         </div>
-      `}
+      `
+      }
       
       <div class="rephrase-buttons">
-        ${!data.error ? `
+        ${
+          !data.error
+            ? `
           <button class="rephrase-button accept">Accept</button>
           <button class="rephrase-button retry">Retry</button>
-        ` : `
+        `
+            : `
           <button class="rephrase-button retry">Retry</button>
-        `}
+        `
+        }
         <button class="rephrase-button cancel">Cancel</button>
       </div>
     `;
@@ -718,7 +752,7 @@ export class ContentScript {
     }
 
     const selection = this.getSelection();
-    
+
     if (selection && selection.text.length > 0) {
       // Show context menu for valid text selection
       this.showSelectionContextMenu(selection, event);
@@ -728,16 +762,19 @@ export class ContentScript {
     }
   }
 
-  private showSelectionContextMenu(selection: TextSelection, event: MouseEvent | KeyboardEvent): void {
+  private showSelectionContextMenu(
+    selection: TextSelection,
+    event: MouseEvent | KeyboardEvent
+  ): void {
     // Remove existing menu if present
     this.hideSelectionContextMenu();
 
     // Get selection position for menu placement
     const range = selection.range;
     if (!range) return;
-    
+
     const rect = range.getBoundingClientRect();
-    
+
     // Create context menu
     this.selectionContextMenu = this.createSelectionContextMenu(selection);
     document.body.appendChild(this.selectionContextMenu);
@@ -782,23 +819,23 @@ export class ContentScript {
       </svg>
       <span>Rephrase</span>
     `;
-    rephraseButton.addEventListener('click', (e) => {
+    rephraseButton.addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       // Set flag to prevent menu from reappearing
       this.isProcessingMenuAction = true;
-      
+
       // Clear text selection to prevent menu from reappearing
       window.getSelection()?.removeAllRanges();
-      
+
       // Hide menu
       this.hideSelectionContextMenu();
-      
+
       // Store selection and trigger action
       this.currentSelection = selection;
       this.triggerRephrase(selection.text);
-      
+
       // Reset flag after a brief delay to allow event processing
       setTimeout(() => {
         this.isProcessingMenuAction = false;
@@ -814,22 +851,22 @@ export class ContentScript {
       </svg>
       <span>Summarize</span>
     `;
-    summarizeButton.addEventListener('click', (e) => {
+    summarizeButton.addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       // Set flag to prevent menu from reappearing
       this.isProcessingMenuAction = true;
-      
+
       // Clear text selection to prevent menu from reappearing
       window.getSelection()?.removeAllRanges();
-      
+
       // Hide menu
       this.hideSelectionContextMenu();
-      
+
       // Trigger action
       this.triggerSummarize(selection.text);
-      
+
       // Reset flag after a brief delay to allow event processing
       setTimeout(() => {
         this.isProcessingMenuAction = false;
@@ -848,33 +885,36 @@ export class ContentScript {
       originalText: text,
       isLoading: true,
     });
-    
+
     try {
       const response = await new Promise<any>((resolve, reject) => {
         const timeoutId = setTimeout(() => {
           reject(new Error('Request timed out. Please try again.'));
         }, 30000);
 
-        chrome.runtime.sendMessage({
-          type: 'REPHRASE_TEXT',
-          payload: { text },
-        }, (response) => {
-          clearTimeout(timeoutId);
-          
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
+        chrome.runtime.sendMessage(
+          {
+            type: 'REPHRASE_TEXT',
+            payload: { text },
+          },
+          response => {
+            clearTimeout(timeoutId);
+
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+              return;
+            }
+
+            if (!response) {
+              reject(new Error('No response received from service'));
+              return;
+            }
+
+            resolve(response);
           }
-          
-          if (!response) {
-            reject(new Error('No response received from service'));
-            return;
-          }
-          
-          resolve(response);
-        });
+        );
       });
-      
+
       if (response && response.success) {
         this.updateModal({
           originalText: text,
@@ -903,33 +943,36 @@ export class ContentScript {
       originalText: text,
       isLoading: true,
     });
-    
+
     try {
       const response = await new Promise<any>((resolve, reject) => {
         const timeoutId = setTimeout(() => {
           reject(new Error('Request timed out. Please try again.'));
         }, 60000);
 
-        chrome.runtime.sendMessage({
-          type: 'SUMMARIZE_TEXT',
-          payload: { text },
-        }, (response) => {
-          clearTimeout(timeoutId);
-          
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
+        chrome.runtime.sendMessage(
+          {
+            type: 'SUMMARIZE_TEXT',
+            payload: { text },
+          },
+          response => {
+            clearTimeout(timeoutId);
+
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+              return;
+            }
+
+            if (!response) {
+              reject(new Error('No response received from service'));
+              return;
+            }
+
+            resolve(response);
           }
-          
-          if (!response) {
-            reject(new Error('No response received from service'));
-            return;
-          }
-          
-          resolve(response);
-        });
+        );
       });
-      
+
       if (response && response.success) {
         this.updateSummaryModal({
           originalText: text,
