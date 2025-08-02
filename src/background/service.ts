@@ -16,9 +16,17 @@ export class BackgroundService {
       contexts: ['selection'],
     });
 
+    chrome.contextMenus.create({
+      id: 'summarize-page',
+      title: 'Summarize with AI',
+      contexts: ['page'],
+    });
+
     chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       if (info.menuItemId === 'rephrase-text' && info.selectionText && tab?.id) {
         await this.handleRephraseRequest(info.selectionText, tab.id);
+      } else if (info.menuItemId === 'summarize-page' && tab?.id) {
+        await this.handlePageSummarizeRequest(tab.id);
       }
     });
   }
@@ -81,6 +89,26 @@ export class BackgroundService {
         });
       } else {
         await this.handleSummaryRequest(textToSummarize, tab.id!);
+      }
+    });
+  }
+
+  private async handlePageSummarizeRequest(tabId: number): Promise<void> {
+    // Get the page content and summarize it
+    chrome.tabs.sendMessage(tabId, { type: 'GET_PAGE_CONTENT' }, async (pageResponse) => {
+      const textToSummarize = pageResponse?.text || '';
+
+      if (textToSummarize.trim()) {
+        await this.handleSummaryRequest(textToSummarize, tabId);
+      } else {
+        // Show error modal if no content is available
+        chrome.tabs.sendMessage(tabId, {
+          type: 'SHOW_SUMMARY_MODAL',
+          payload: {
+            originalText: '',
+            error: 'AI summary is not available at the moment, please try again',
+          },
+        });
       }
     });
   }
