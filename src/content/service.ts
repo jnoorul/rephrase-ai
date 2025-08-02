@@ -258,7 +258,7 @@ export class ContentScript {
             <div class="rephrase-loading-dot"></div>
           </div>
           <div class="rephrase-loading-text">Rephrasing text...</div>
-          <div class="rephrase-loading-subtext">ChatGIC is analyzing and rephrasing your text</div>
+          <div class="rephrase-loading-subtext">AI is analyzing and rephrasing your text</div>
         </div>
       `;
     } else {
@@ -332,7 +332,7 @@ export class ContentScript {
             <div class="summary-loading-dot"></div>
           </div>
           <div class="summary-loading-text">Analyzing content...</div>
-          <div class="summary-loading-subtext">ChatGIC is reading and summarizing the content for you</div>
+          <div class="summary-loading-subtext">AI is reading and summarizing the content for you</div>
         </div>
       `;
     } else {
