@@ -16,15 +16,26 @@ export class BackgroundService {
       contexts: ['selection'],
     });
 
+    chrome.contextMenus.create({
+      id: 'summarize-page',
+      title: 'Summarize page with AI',
+      contexts: ['page'],
+      icons: {
+        '16': 'icons/summary-icon16.png'
+      }
+    } as any);
+
     chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       if (info.menuItemId === 'rephrase-text' && info.selectionText && tab?.id) {
         await this.handleRephraseRequest(info.selectionText, tab.id);
+      } else if (info.menuItemId === 'summarize-page' && tab?.id) {
+        await this.handlePageSummarizeRequest(tab.id);
       }
     });
   }
 
   private setupKeyboardShortcuts(): void {
-    chrome.commands.onCommand.addListener(async (command) => {
+    chrome.commands.onCommand.addListener(async command => {
       if (command === 'rephrase-text') {
         await this.handleRephraseKeyboardShortcut();
       } else if (command === 'summarize-text') {
@@ -46,7 +57,7 @@ export class BackgroundService {
     if (!tab?.id) return;
 
     // Request selection from content script
-    chrome.tabs.sendMessage(tab.id, { type: 'GET_SELECTION' }, async (response) => {
+    chrome.tabs.sendMessage(tab.id, { type: 'GET_SELECTION' }, async response => {
       if (response?.text) {
         await this.handleRephraseRequest(response.text, tab.id!);
       }
@@ -58,14 +69,14 @@ export class BackgroundService {
     if (!tab?.id) return;
 
     // Request selection from content script first
-    chrome.tabs.sendMessage(tab.id, { type: 'GET_SELECTION' }, async (selectionResponse) => {
+    chrome.tabs.sendMessage(tab.id, { type: 'GET_SELECTION' }, async selectionResponse => {
       let textToSummarize = selectionResponse?.text || '';
-      
+
       // If no text is selected, get the page content
       if (!textToSummarize.trim()) {
-        chrome.tabs.sendMessage(tab.id!, { type: 'GET_PAGE_CONTENT' }, async (pageResponse) => {
+        chrome.tabs.sendMessage(tab.id!, { type: 'GET_PAGE_CONTENT' }, async pageResponse => {
           textToSummarize = pageResponse?.text || '';
-          
+
           if (textToSummarize.trim()) {
             await this.handleSummaryRequest(textToSummarize, tab.id!);
           } else {
@@ -81,6 +92,26 @@ export class BackgroundService {
         });
       } else {
         await this.handleSummaryRequest(textToSummarize, tab.id!);
+      }
+    });
+  }
+
+  private async handlePageSummarizeRequest(tabId: number): Promise<void> {
+    // Get the page content and summarize it
+    chrome.tabs.sendMessage(tabId, { type: 'GET_PAGE_CONTENT' }, async pageResponse => {
+      const textToSummarize = pageResponse?.text || '';
+
+      if (textToSummarize.trim()) {
+        await this.handleSummaryRequest(textToSummarize, tabId);
+      } else {
+        // Show error modal if no content is available
+        chrome.tabs.sendMessage(tabId, {
+          type: 'SHOW_SUMMARY_MODAL',
+          payload: {
+            originalText: '',
+            error: 'AI summary is not available at the moment, please try again',
+          },
+        });
       }
     });
   }
@@ -160,7 +191,7 @@ export class BackgroundService {
     } catch (error) {
       sendResponse({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     }
   }
@@ -270,7 +301,7 @@ export class BackgroundService {
   }
 
   private getActiveTab(): Promise<chrome.tabs.Tab[]> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       chrome.tabs.query({ active: true, currentWindow: true }, resolve);
     });
   }
