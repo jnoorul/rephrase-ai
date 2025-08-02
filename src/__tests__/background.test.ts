@@ -65,6 +65,7 @@ describe('BackgroundService', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
@@ -108,6 +109,7 @@ describe('BackgroundService', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
@@ -150,6 +152,7 @@ describe('BackgroundService', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
@@ -181,6 +184,48 @@ describe('BackgroundService', () => {
       expect(mockAPIClientFactory.rephrase).toHaveBeenCalledWith('Selected text', mockSettings);
     });
 
+    it('should handle summarize-text command', async () => {
+      const mockSettings = {
+        provider: 'anthropic' as const,
+        openaiApiKey: '',
+        claudeApiKey: 'test-key',
+        openaiModel: 'gpt-4',
+        claudeModel: 'claude-3-5-sonnet-20241022',
+        customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
+      };
+
+      mockStorageService.getSettings.mockResolvedValue(mockSettings);
+      (mockAPIClientFactory as any).summarize = jest.fn().mockResolvedValue({
+        success: true,
+        summaryText: 'Summary text',
+      });
+
+      chrome.tabs.query = jest.fn().mockImplementation((query, callback) => {
+        callback([{ id: 1 }]);
+      });
+
+      chrome.tabs.sendMessage = jest.fn().mockImplementation((tabId, message, callback) => {
+        if (message.type === 'GET_SELECTION') {
+          callback({ text: 'Selected text' });
+        } else if (message.type === 'GET_PAGE_CONTENT') {
+          callback({ text: 'Page content' });
+        }
+      });
+
+      backgroundService.initialize();
+
+      const commandHandler = (chrome.commands.onCommand.addListener as jest.Mock).mock.calls[0][0];
+
+      await commandHandler('summarize-text');
+
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
+        type: 'GET_SELECTION',
+      }, expect.any(Function));
+
+      expect((mockAPIClientFactory as any).summarize).toHaveBeenCalledWith('Selected text', mockSettings);
+    });
+
     it('should handle unknown command', async () => {
       backgroundService.initialize();
 
@@ -202,6 +247,7 @@ describe('BackgroundService', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
@@ -233,6 +279,7 @@ describe('BackgroundService', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
@@ -260,6 +307,7 @@ describe('BackgroundService', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.saveSettings.mockResolvedValue();

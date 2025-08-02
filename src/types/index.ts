@@ -5,6 +5,7 @@ export interface ExtensionSettings {
   openaiModel: string;
   claudeModel: string;
   customPrompt?: string;
+  customSummaryPrompt?: string;
 }
 
 export interface RephraseRequest {
@@ -46,12 +47,15 @@ export interface ClaudeResponse {
 
 export type MessageType = 
   | 'REPHRASE_TEXT'
+  | 'SUMMARIZE_TEXT'
   | 'GET_SETTINGS'
   | 'SAVE_SETTINGS'
   | 'SHOW_MODAL'
+  | 'SHOW_SUMMARY_MODAL'
   | 'HIDE_MODAL'
   | 'REPLACE_TEXT'
-  | 'GET_SELECTION';
+  | 'GET_SELECTION'
+  | 'GET_PAGE_CONTENT';
 
 export interface ChromeMessage {
   type: MessageType;
@@ -62,5 +66,22 @@ export interface ModalData {
   originalText: string;
   rephrasedText?: string;
   selection?: TextSelection;
+  error?: string;
+}
+
+export interface SummaryModalData {
+  originalText: string;
+  summaryText?: string;
+  error?: string;
+}
+
+export interface SummaryRequest {
+  text: string;
+  settings: ExtensionSettings;
+}
+
+export interface SummaryResponse {
+  success: boolean;
+  summaryText?: string;
   error?: string;
 }

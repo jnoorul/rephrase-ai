@@ -49,6 +49,7 @@ describe('StorageService', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       });
     });
 
@@ -60,6 +61,7 @@ describe('StorageService', () => {
         openaiModel: 'gpt-4-turbo',
         claudeModel: 'claude-3-haiku-20240307',
         customPrompt: 'Make this formal',
+        customSummaryPrompt: 'Brief summary please',
       };
 
       mockChromeStorageSync.get.mockImplementation((keys, callback) => {
@@ -90,6 +92,7 @@ describe('StorageService', () => {
         openaiModel: 'gpt-4-turbo',
         claudeModel: 'claude-3-haiku-20240307',
         customPrompt: 'Make this formal',
+        customSummaryPrompt: 'Brief summary please',
       };
 
       mockChromeStorageSync.set.mockImplementation((items, callback) => {
@@ -112,6 +115,7 @@ describe('StorageService', () => {
         openaiModel: 'gpt-4-turbo',
         claudeModel: 'claude-3-haiku-20240307',
         customPrompt: 'Make this formal',
+        customSummaryPrompt: 'Brief summary please',
       };
 
       mockChromeStorageSync.set.mockImplementation((items, callback) => {
@@ -132,6 +136,7 @@ describe('StorageService', () => {
         openaiModel: 'gpt-4-turbo',
         claudeModel: 'claude-3-haiku-20240307',
         customPrompt: 'Make this formal',
+        customSummaryPrompt: 'Brief summary please',
       };
 
       const result = storageService.validateSettings(settings);
@@ -147,6 +152,7 @@ describe('StorageService', () => {
         openaiModel: 'gpt-4-turbo',
         claudeModel: 'claude-3-haiku-20240307',
         customPrompt: '',
+        customSummaryPrompt: '',
       };
 
       const result = storageService.validateSettings(settings);
@@ -162,6 +168,7 @@ describe('StorageService', () => {
         openaiModel: 'gpt-4-turbo',
         claudeModel: 'claude-3-haiku-20240307',
         customPrompt: '',
+        customSummaryPrompt: '',
       };
 
       const result = storageService.validateSettings(settings);
@@ -177,6 +184,7 @@ describe('StorageService', () => {
         openaiModel: '',
         claudeModel: 'claude-3-haiku-20240307',
         customPrompt: '',
+        customSummaryPrompt: '',
       };
 
       const result = storageService.validateSettings(settings);

@@ -26,7 +26,9 @@ export class BackgroundService {
   private setupKeyboardShortcuts(): void {
     chrome.commands.onCommand.addListener(async (command) => {
       if (command === 'rephrase-text') {
-        await this.handleKeyboardShortcut();
+        await this.handleRephraseKeyboardShortcut();
+      } else if (command === 'summarize-text') {
+        await this.handleSummarizeKeyboardShortcut();
       }
     });
   }
@@ -39,7 +41,7 @@ export class BackgroundService {
     });
   }
 
-  private async handleKeyboardShortcut(): Promise<void> {
+  private async handleRephraseKeyboardShortcut(): Promise<void> {
     const [tab] = await this.getActiveTab();
     if (!tab?.id) return;
 
@@ -47,6 +49,38 @@ export class BackgroundService {
     chrome.tabs.sendMessage(tab.id, { type: 'GET_SELECTION' }, async (response) => {
       if (response?.text) {
         await this.handleRephraseRequest(response.text, tab.id!);
+      }
+    });
+  }
+
+  private async handleSummarizeKeyboardShortcut(): Promise<void> {
+    const [tab] = await this.getActiveTab();
+    if (!tab?.id) return;
+
+    // Request selection from content script first
+    chrome.tabs.sendMessage(tab.id, { type: 'GET_SELECTION' }, async (selectionResponse) => {
+      let textToSummarize = selectionResponse?.text || '';
+      
+      // If no text is selected, get the page content
+      if (!textToSummarize.trim()) {
+        chrome.tabs.sendMessage(tab.id!, { type: 'GET_PAGE_CONTENT' }, async (pageResponse) => {
+          textToSummarize = pageResponse?.text || '';
+          
+          if (textToSummarize.trim()) {
+            await this.handleSummaryRequest(textToSummarize, tab.id!);
+          } else {
+            // Show error modal if no content is available
+            chrome.tabs.sendMessage(tab.id!, {
+              type: 'SHOW_SUMMARY_MODAL',
+              payload: {
+                originalText: '',
+                error: 'AI summary is not available at the moment, please try again',
+              },
+            });
+          }
+        });
+      } else {
+        await this.handleSummaryRequest(textToSummarize, tab.id!);
       }
     });
   }
@@ -93,6 +127,10 @@ export class BackgroundService {
       switch (message.type) {
         case 'REPHRASE_TEXT':
           await this.handleRephraseTextMessage(message, sendResponse);
+          break;
+
+        case 'SUMMARIZE_TEXT':
+          await this.handleSummarizeTextMessage(message, sendResponse);
           break;
 
         case 'GET_SETTINGS':
@@ -154,6 +192,55 @@ export class BackgroundService {
       sendResponse({
         success: false,
         error: error instanceof Error ? error.message : 'Failed to save settings',
+      });
+    }
+  }
+
+  private async handleSummaryRequest(text: string, tabId: number): Promise<void> {
+    try {
+      const settings = await storageService.getSettings();
+      const result = await APIClientFactory.summarize(text, settings);
+
+      if (result.success) {
+        chrome.tabs.sendMessage(tabId, {
+          type: 'SHOW_SUMMARY_MODAL',
+          payload: {
+            originalText: text,
+            summaryText: result.summaryText,
+          },
+        });
+      } else {
+        chrome.tabs.sendMessage(tabId, {
+          type: 'SHOW_SUMMARY_MODAL',
+          payload: {
+            originalText: text,
+            error: 'AI summary is not available at the moment, please try again',
+          },
+        });
+      }
+    } catch (error) {
+      chrome.tabs.sendMessage(tabId, {
+        type: 'SHOW_SUMMARY_MODAL',
+        payload: {
+          originalText: text,
+          error: 'AI summary is not available at the moment, please try again',
+        },
+      });
+    }
+  }
+
+  private async handleSummarizeTextMessage(
+    message: ChromeMessage,
+    sendResponse: (response?: any) => void
+  ): Promise<void> {
+    try {
+      const settings = await storageService.getSettings();
+      const result = await APIClientFactory.summarize(message.payload.text, settings);
+      sendResponse(result);
+    } catch (error) {
+      sendResponse({
+        success: false,
+        error: 'AI summary is not available at the moment, please try again',
       });
     }
   }

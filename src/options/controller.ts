@@ -55,6 +55,7 @@ export class OptionsController {
       openaiModel: document.getElementById('openaiModel') as HTMLSelectElement,
       openaiApiKey: document.getElementById('openaiApiKey') as HTMLInputElement,
       customPrompt: document.getElementById('customPrompt') as HTMLTextAreaElement,
+      customSummaryPrompt: document.getElementById('customSummaryPrompt') as HTMLTextAreaElement,
     };
 
     if (elements.provider) {
@@ -79,6 +80,10 @@ export class OptionsController {
 
     if (elements.customPrompt) {
       elements.customPrompt.value = this.settings.customPrompt || '';
+    }
+
+    if (elements.customSummaryPrompt) {
+      elements.customSummaryPrompt.value = this.settings.customSummaryPrompt || '';
     }
   }
 
@@ -109,6 +114,7 @@ export class OptionsController {
       openaiModel: document.getElementById('openaiModel') as HTMLSelectElement,
       openaiApiKey: document.getElementById('openaiApiKey') as HTMLInputElement,
       customPrompt: document.getElementById('customPrompt') as HTMLTextAreaElement,
+      customSummaryPrompt: document.getElementById('customSummaryPrompt') as HTMLTextAreaElement,
     };
 
     const defaultSettings = storageService.getDefaultSettings();
@@ -120,6 +126,7 @@ export class OptionsController {
       openaiModel: elements.openaiModel?.value || this.settings?.openaiModel || defaultSettings.openaiModel,
       openaiApiKey: elements.openaiApiKey?.value || this.settings?.openaiApiKey || defaultSettings.openaiApiKey || '',
       customPrompt: elements.customPrompt?.value || this.settings?.customPrompt || defaultSettings.customPrompt || '',
+      customSummaryPrompt: elements.customSummaryPrompt?.value || this.settings?.customSummaryPrompt || defaultSettings.customSummaryPrompt || '',
     };
   }
 

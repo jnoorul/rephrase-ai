@@ -34,6 +34,13 @@
         "mac": "Command+1"
       },
       "description": "Rephrase selected text with AI"
+    },
+    "summarize-text": {
+      "suggested_key": {
+        "default": "Ctrl+2",
+        "mac": "Command+2"
+      },
+      "description": "Summarize selected text or page content with AI"
     }
   },
   "icons": {
