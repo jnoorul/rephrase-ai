@@ -30,6 +30,7 @@ describe('OptionsController', () => {
       </select>
       <input type="text" id="openaiApiKey" />
       <textarea id="customPrompt"></textarea>
+      <textarea id="customSummaryPrompt"></textarea>
       <button id="saveSettings">Save Settings</button>
       <button id="testConnection">Test Connection</button>
       <div id="status"></div>
@@ -52,6 +53,7 @@ describe('OptionsController', () => {
       openaiModel: 'gpt-4',
       claudeModel: 'claude-3-5-sonnet-20241022',
       customPrompt: '',
+      customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
     });
     
     optionsController = new OptionsController();
@@ -68,6 +70,7 @@ describe('OptionsController', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: 'Custom prompt',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
@@ -95,6 +98,7 @@ describe('OptionsController', () => {
         openaiModel: 'gpt-4-turbo',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: 'Custom prompt',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
@@ -126,6 +130,7 @@ describe('OptionsController', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
@@ -160,6 +165,7 @@ describe('OptionsController', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: 'New custom prompt',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       });
     });
 
@@ -171,6 +177,7 @@ describe('OptionsController', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
@@ -202,6 +209,7 @@ describe('OptionsController', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
@@ -242,6 +250,7 @@ describe('OptionsController', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
@@ -276,6 +285,7 @@ describe('OptionsController', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
@@ -305,6 +315,7 @@ describe('OptionsController', () => {
         openaiModel: 'gpt-4',
         claudeModel: 'claude-3-5-sonnet-20241022',
         customPrompt: '',
+        customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
       };
 
       mockStorageService.getSettings.mockResolvedValue(mockSettings);
