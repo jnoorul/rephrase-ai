@@ -438,9 +438,11 @@ export class ContentScript {
     const retryButton = modal.querySelector('.summary-button.retry') as HTMLButtonElement;
     retryButton?.addEventListener('click', async () => {
       if (data.originalText) {
-        // Show loading state
-        retryButton.disabled = true;
-        retryButton.textContent = 'Retrying...';
+        // Show loading modal immediately with beautiful animation
+        this.showSummaryModal({
+          originalText: data.originalText,
+          isLoading: true,
+        });
         
         try {
           const response = await new Promise<any>((resolve, reject) => {
@@ -470,25 +472,24 @@ export class ContentScript {
           });
           
           if (response && response.success) {
-            this.showSummaryModal({
+            this.updateSummaryModal({
               originalText: data.originalText,
               summaryText: response.summaryText,
+              isLoading: false,
             });
           } else {
-            this.showSummaryModal({
+            this.updateSummaryModal({
               originalText: data.originalText,
               error: 'AI summary is not available at the moment, please try again',
+              isLoading: false,
             });
           }
         } catch (error) {
-          this.showSummaryModal({
+          this.updateSummaryModal({
             originalText: data.originalText,
             error: 'AI summary is not available at the moment, please try again',
+            isLoading: false,
           });
-        } finally {
-          // Reset button state
-          retryButton.disabled = false;
-          retryButton.textContent = 'Retry';
         }
       }
     });
