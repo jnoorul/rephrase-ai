@@ -37,6 +37,12 @@ export class OptionsController {
     testButton?.addEventListener('click', () => {
       this.testConnection();
     });
+
+    // Open shortcuts settings
+    const openShortcutsButton = document.getElementById('openShortcuts') as HTMLButtonElement;
+    openShortcutsButton?.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+    });
   }
 
   private updateForm(): void {

@@ -30,8 +30,8 @@
   "commands": {
     "rephrase-text": {
       "suggested_key": {
-        "default": "Ctrl+Shift+E",
-        "mac": "Command+Shift+E"
+        "default": "Ctrl+1",
+        "mac": "Command+1"
       },
       "description": "Rephrase selected text with AI"
     }
