@@ -157,8 +157,10 @@ export class ContentScript {
     const modal = this.createModal(data);
     document.body.appendChild(modal);
 
-    // Store current selection for later use
-    this.currentSelection = this.getSelection();
+    // Store current selection for later use, but don't overwrite if we already have one
+    if (!this.currentSelection) {
+      this.currentSelection = this.getSelection();
+    }
   }
 
   hideModal(): void {
@@ -166,6 +168,7 @@ export class ContentScript {
     if (existingModal) {
       existingModal.remove();
     }
+    // Don't clear currentSelection here - only clear it when we actually want to reset
   }
 
   getMainPageContent(): string {
@@ -437,6 +440,7 @@ export class ContentScript {
     acceptButton?.addEventListener('click', () => {
       if (this.currentSelection && data.rephrasedText) {
         this.replaceText(this.currentSelection, data.rephrasedText);
+        this.currentSelection = null; // Clear selection after successful replacement
         this.hideModal();
       }
     });
@@ -507,6 +511,7 @@ export class ContentScript {
     // Cancel button
     const cancelButton = modal.querySelector('.rephrase-button.cancel') as HTMLButtonElement;
     cancelButton?.addEventListener('click', () => {
+      this.currentSelection = null; // Clear selection when canceling
       this.hideModal();
     });
 
