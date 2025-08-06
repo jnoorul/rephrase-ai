@@ -1,4 +1,10 @@
-import { TextSelection, ChromeMessage, ModalData, SummaryModalData, AskAIModalData } from '../types';
+import {
+  TextSelection,
+  ChromeMessage,
+  ModalData,
+  SummaryModalData,
+  AskAIModalData,
+} from '../types';
 import { marked } from 'marked';
 
 export class ContentScript {
@@ -61,6 +67,7 @@ export class ContentScript {
         return false; // Sync response
 
       case 'SHOW_MODAL':
+        this.hideSelectionContextMenu(); // Hide context menu when showing modal via keyboard shortcut
         this.showModal(message.payload);
         return false; // Sync response
 
@@ -69,6 +76,7 @@ export class ContentScript {
         return false; // Sync response
 
       case 'SHOW_SUMMARY_MODAL':
+        this.hideSelectionContextMenu(); // Hide context menu when showing summary modal via keyboard shortcut
         this.showSummaryModal(message.payload);
         return false; // Sync response
 
@@ -76,6 +84,7 @@ export class ContentScript {
         this.updateSummaryModal(message.payload);
         return false; // Sync response
       case 'SHOW_ASK_AI_MODAL':
+        this.hideSelectionContextMenu(); // Hide context menu when showing ask AI modal via keyboard shortcut
         this.showAskAIModal(message.payload);
         return false; // Sync response
       case 'UPDATE_ASK_AI_MODAL':
@@ -385,12 +394,16 @@ export class ContentScript {
         }
         
         <div class="summary-buttons">
-          ${!data.error ? `<button class="summary-button copy">
+          ${
+            !data.error
+              ? `<button class="summary-button copy">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="summary-button-icon">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
             </svg>
             <span>Copy</span>
-          </button>` : ''}
+          </button>`
+              : ''
+          }
           <button class="summary-button retry">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="summary-button-icon">
               <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -461,12 +474,16 @@ export class ContentScript {
         }
         
         <div class="ask-ai-buttons">
-          ${!data.error ? `<button class="ask-ai-button copy">
+          ${
+            !data.error
+              ? `<button class="ask-ai-button copy">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="ask-ai-button-icon">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
             </svg>
             <span>Copy</span>
-          </button>` : ''}
+          </button>`
+              : ''
+          }
           <button class="ask-ai-button retry">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="ask-ai-button-icon">
               <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -529,7 +546,7 @@ export class ContentScript {
       return htmlContent;
     } catch (error) {
       console.error('Error parsing markdown:', error);
-      // Fallback to simple paragraph formatting only on actual errors  
+      // Fallback to simple paragraph formatting only on actual errors
       return `<p>${this.escapeHtml(text)}</p>`;
     }
   }
@@ -822,12 +839,16 @@ export class ContentScript {
       }
       
       <div class="summary-buttons">
-        ${!data.error ? `<button class="summary-button copy">
+        ${
+          !data.error
+            ? `<button class="summary-button copy">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="summary-button-icon">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
           </svg>
           <span>Copy</span>
-        </button>` : ''}
+        </button>`
+            : ''
+        }
         <button class="summary-button retry">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="summary-button-icon">
             <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -1267,7 +1288,7 @@ export class ContentScript {
         const textContent = data.explanation;
         try {
           await navigator.clipboard.writeText(textContent);
-          
+
           // Visual feedback for successful copy
           const originalText = copyButton.innerHTML;
           copyButton.innerHTML = `
@@ -1276,7 +1297,7 @@ export class ContentScript {
             </svg>
             <span>Copied!</span>
           `;
-          
+
           setTimeout(() => {
             copyButton.innerHTML = originalText;
           }, 2000);
@@ -1289,7 +1310,7 @@ export class ContentScript {
           textArea.select();
           document.execCommand('copy');
           document.body.removeChild(textArea);
-          
+
           const originalText = copyButton.innerHTML;
           copyButton.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="ask-ai-button-icon">
@@ -1297,7 +1318,7 @@ export class ContentScript {
             </svg>
             <span>Copied!</span>
           `;
-          
+
           setTimeout(() => {
             copyButton.innerHTML = originalText;
           }, 2000);
@@ -1372,7 +1393,7 @@ export class ContentScript {
     });
 
     // Close modal when clicking outside
-    modal.addEventListener('click', (event) => {
+    modal.addEventListener('click', event => {
       if (event.target === modal) {
         this.hideModal();
       }
@@ -1380,14 +1401,14 @@ export class ContentScript {
 
     // Prevent closing when clicking inside the modal content
     const modalContent = modal.querySelector('.ask-ai-modal-content');
-    modalContent?.addEventListener('click', (event) => {
+    modalContent?.addEventListener('click', event => {
       event.stopPropagation();
     });
   }
 
   private addLoadingAskAIModalEventListeners(modal: HTMLElement): void {
     // Close modal when clicking outside
-    modal.addEventListener('click', (event) => {
+    modal.addEventListener('click', event => {
       if (event.target === modal) {
         this.hideModal();
       }
@@ -1395,7 +1416,7 @@ export class ContentScript {
 
     // Prevent closing when clicking inside the modal content
     const modalContent = modal.querySelector('.ask-ai-modal-content');
-    modalContent?.addEventListener('click', (event) => {
+    modalContent?.addEventListener('click', event => {
       event.stopPropagation();
     });
   }
