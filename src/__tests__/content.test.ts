@@ -310,12 +310,12 @@ describe('ContentScript', () => {
       expect(document.querySelector('.rephrase-modal')).toBeFalsy();
     });
 
-    it('should handle Cancel button click', () => {
+    it('should handle close button click', () => {
       contentScript.showModal(modalData);
 
-      const cancelButton = document.querySelector('.rephrase-button.cancel') as HTMLButtonElement;
+      const closeButton = document.querySelector('.modal-close-btn') as HTMLButtonElement;
       const mockEvent = new Event('click');
-      cancelButton.dispatchEvent(mockEvent);
+      closeButton.dispatchEvent(mockEvent);
 
       expect(document.querySelector('.rephrase-modal')).toBeFalsy();
     });

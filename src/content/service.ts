@@ -274,6 +274,11 @@ export class ContentScript {
 
     if (data.isLoading) {
       modalContent.innerHTML = `
+        <button class="modal-close-btn" aria-label="Close modal">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         <h3>Rephrase with AI</h3>
         <div class="rephrase-loading">
           <div class="rephrase-loading-spinner"></div>
@@ -288,6 +293,11 @@ export class ContentScript {
       `;
     } else {
       modalContent.innerHTML = `
+        <button class="modal-close-btn" aria-label="Close modal">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         <h3>Rephrase with AI</h3>
         
         <div class="rephrase-text-section">
@@ -336,7 +346,6 @@ export class ContentScript {
             </button>
           `
           }
-          <button class="rephrase-button cancel">Cancel</button>
         </div>
       `;
     }
@@ -363,6 +372,11 @@ export class ContentScript {
 
     if (data.isLoading) {
       modalContent.innerHTML = `
+        <button class="modal-close-btn" aria-label="Close modal">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         <h3>AI Summary</h3>
         <div class="summary-loading">
           <div class="summary-loading-spinner"></div>
@@ -377,6 +391,11 @@ export class ContentScript {
       `;
     } else {
       modalContent.innerHTML = `
+        <button class="modal-close-btn" aria-label="Close modal">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         <h3>AI Summary</h3>
         
         ${
@@ -410,7 +429,6 @@ export class ContentScript {
             </svg>
             <span>Retry</span>
           </button>
-          <button class="summary-button close">Close</button>
         </div>
       `;
     }
@@ -437,6 +455,11 @@ export class ContentScript {
 
     if (data.isLoading) {
       modalContent.innerHTML = `
+        <button class="modal-close-btn" aria-label="Close modal">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         <h3>Explain</h3>
         <div class="ask-ai-loading">
           <div class="ask-ai-loading-spinner"></div>
@@ -451,6 +474,11 @@ export class ContentScript {
       `;
     } else {
       modalContent.innerHTML = `
+        <button class="modal-close-btn" aria-label="Close modal">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         <h3>Explain</h3>
         
         <div class="ask-ai-text-section">
@@ -489,12 +517,6 @@ export class ContentScript {
               <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
             </svg>
             <span>Retry</span>
-          </button>
-          <button class="ask-ai-button close">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="ask-ai-button-icon">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <span>Close</span>
           </button>
         </div>
       `;
@@ -563,6 +585,13 @@ export class ContentScript {
     const modalContent = modal.querySelector('.rephrase-modal-content');
     modalContent?.addEventListener('click', e => {
       e.stopPropagation();
+    });
+
+    // Close button in top right corner
+    const closeButton = modal.querySelector('.modal-close-btn') as HTMLButtonElement;
+    closeButton?.addEventListener('click', () => {
+      this.currentSelection = null; // Clear selection when closing
+      this.hideModal();
     });
 
     // Accept button
@@ -638,13 +667,6 @@ export class ContentScript {
       }
     });
 
-    // Cancel button
-    const cancelButton = modal.querySelector('.rephrase-button.cancel') as HTMLButtonElement;
-    cancelButton?.addEventListener('click', () => {
-      this.currentSelection = null; // Clear selection when canceling
-      this.hideModal();
-    });
-
     // Escape key to close modal
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
@@ -667,8 +689,8 @@ export class ContentScript {
       e.stopPropagation();
     });
 
-    // Close button
-    const closeButton = modal.querySelector('.summary-button.close') as HTMLButtonElement;
+    // Close button in top right corner
+    const closeButton = modal.querySelector('.modal-close-btn') as HTMLButtonElement;
     closeButton?.addEventListener('click', () => {
       this.hideModal();
     });
@@ -822,6 +844,11 @@ export class ContentScript {
 
     // Update modal content with results
     modalContent.innerHTML = `
+      <button class="modal-close-btn" aria-label="Close modal">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
       <h3>AI Summary</h3>
       
       ${
@@ -855,7 +882,6 @@ export class ContentScript {
           </svg>
           <span>Retry</span>
         </button>
-        <button class="summary-button close">Close</button>
       </div>
     `;
 
@@ -872,6 +898,11 @@ export class ContentScript {
 
     // Update modal content with results
     modalContent.innerHTML = `
+      <button class="modal-close-btn" aria-label="Close modal">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
       <h3>Rephrase with AI</h3>
       
       <div class="rephrase-text-section">
@@ -920,7 +951,6 @@ export class ContentScript {
           </button>
         `
         }
-        <button class="rephrase-button cancel">Cancel</button>
       </div>
     `;
 
@@ -1280,7 +1310,7 @@ export class ContentScript {
   private addAskAIModalEventListeners(modal: HTMLElement, data: AskAIModalData): void {
     const copyButton = modal.querySelector('.ask-ai-button.copy') as HTMLButtonElement;
     const retryButton = modal.querySelector('.ask-ai-button.retry') as HTMLButtonElement;
-    const closeButton = modal.querySelector('.ask-ai-button.close') as HTMLButtonElement;
+    const closeButton = modal.querySelector('.modal-close-btn') as HTMLButtonElement;
 
     // Copy button functionality
     copyButton?.addEventListener('click', async () => {
