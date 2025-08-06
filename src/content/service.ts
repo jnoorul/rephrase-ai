@@ -6,6 +6,7 @@ import {
   AskAIModalData,
 } from '../types';
 import { marked } from 'marked';
+import { storageService } from '../utils/storage';
 
 export class ContentScript {
   private currentSelection: TextSelection | null = null;
@@ -13,6 +14,13 @@ export class ContentScript {
   private isProcessingMenuAction: boolean = false;
 
   initialize(): void {
+    // Check if current URL is blacklisted before setup
+    const currentUrl = window.location.href;
+    if (storageService.isUrlBlacklisted(currentUrl)) {
+      console.log('Rephrase AI: Extension disabled on this URL due to blacklist policy');
+      return; // Exit early - no functionality on blacklisted URLs
+    }
+
     this.setupMessageHandlers();
     this.setupSelectionHandler();
   }

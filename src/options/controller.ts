@@ -13,6 +13,7 @@ export class OptionsController {
     await this.loadSettings();
     this.setupEventListeners();
     this.updateForm();
+    this.populateBlacklistDisplay();
   }
 
   private async loadSettings(): Promise<void> {
@@ -153,6 +154,30 @@ export class OptionsController {
       console.error('Failed to test connection:', error);
       this.showStatus('Failed to test connection', 'error');
     }
+  }
+
+  private populateBlacklistDisplay(): void {
+    const blacklistedUrls = storageService.getBlacklistedUrls();
+    const container = document.getElementById('blacklistedUrlsList');
+    
+    if (!container) return;
+    
+    if (blacklistedUrls.length === 0) {
+      container.innerHTML = '<p class="no-urls">No URLs are currently blocked.</p>';
+      return;
+    }
+
+    const urlListHTML = blacklistedUrls
+      .map(url => `<div class="readonly-url-item">${this.escapeHtml(url)}</div>`)
+      .join('');
+    
+    container.innerHTML = urlListHTML;
+  }
+
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   private showStatus(message: string, type: 'success' | 'error'): void {

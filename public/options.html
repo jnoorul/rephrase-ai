@@ -65,6 +65,42 @@
         .api-key-section {
             margin-top: 15px;
         }
+        .readonly-url-list {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .readonly-url-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+            font-family: monospace;
+            color: #666;
+            word-break: break-all;
+        }
+        .readonly-url-item:last-child {
+            border-bottom: none;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+            margin-top: 10px;
+        }
+        .no-urls {
+            color: #28a745;
+            font-style: italic;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .description {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -131,6 +167,19 @@
         </p>
         <p style="font-size: 12px; color: #666; margin-top: 10px;">
             This will open Chrome's extension shortcuts page where you can set your preferred shortcut for the "Rephrase selected text with AI" command.
+        </p>
+    </div>
+
+    <div class="section">
+        <h3>🚫 Blocked URLs</h3>
+        <p class="description">
+            This extension is automatically disabled on the following URLs for security and policy compliance:
+        </p>
+        <div id="blacklistedUrlsList" class="readonly-url-list">
+            <!-- Populated dynamically -->
+        </div>
+        <p class="help-text">
+            <strong>Note:</strong> This list cannot be modified. Contact your administrator if you need changes.
         </p>
     </div>
     

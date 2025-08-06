@@ -13,12 +13,16 @@ export class StorageService {
     openaiModel: 'gpt-4',
     claudeModel: 'claude-3-5-sonnet-20241022',
     customPrompt: '',
-    customSummaryPrompt: 'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
+    customSummaryPrompt:
+      'Summarize the following text in a clear and concise manner with proper headings and paragraphs',
   };
+
+  // Hardcoded blacklist - read-only for users
+  private readonly blacklistedUrls: string[] = ['*.ft.com', '*.internal-company.com'];
 
   async getSettings(): Promise<ExtensionSettings> {
     return new Promise((resolve, reject) => {
-      chrome.storage.sync.get(['settings'], (result) => {
+      chrome.storage.sync.get(['settings'], result => {
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message));
           return;
@@ -76,6 +80,55 @@ export class StorageService {
 
   getDefaultSettings(): ExtensionSettings {
     return { ...this.defaultSettings };
+  }
+
+  // Blacklist management methods
+  getBlacklistedUrls(): string[] {
+    return [...this.blacklistedUrls]; // Return copy to prevent modification
+  }
+
+  isUrlBlacklisted(url: string): boolean {
+    return this.blacklistedUrls.some(pattern => this.matchesPattern(url, pattern));
+  }
+
+  private matchesPattern(url: string, pattern: string): boolean {
+    // Handle regex patterns: /pattern/flags
+    if (pattern.startsWith('/') && pattern.includes('/')) {
+      const regexMatch = pattern.match(/^\/(.+)\/([gimsu]*)$/);
+      if (regexMatch) {
+        try {
+          return new RegExp(regexMatch[1], regexMatch[2]).test(url);
+        } catch (e) {
+          console.warn('Rephrase AI: Invalid regex pattern:', pattern);
+          return false;
+        }
+      }
+    }
+
+    let regexPattern;
+
+    // Handle domain-only wildcard patterns (e.g., "*.internal-company.com")
+    if (pattern.includes('*') && !pattern.includes('://')) {
+      // For domain patterns like "*.internal-company.com"
+      // Replace * with pattern to match subdomains
+      regexPattern = pattern
+        .replace(/\./g, '\\.') // Escape dots
+        .replace(/\*/g, '[^.\\s/]+'); // Replace * with subdomain pattern
+      regexPattern = `^https?://[^/]*${regexPattern}(/.*)?$`;
+    } else {
+      // Handle full URL patterns (e.g., "https://example.com/*")
+      regexPattern = pattern
+        .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // Escape special regex chars
+        .replace(/\*/g, '.*'); // Convert * to .*
+      regexPattern = `^${regexPattern}$`;
+    }
+
+    try {
+      return new RegExp(regexPattern).test(url);
+    } catch (e) {
+      console.warn('Rephrase AI: Invalid pattern:', pattern, 'Generated regex:', regexPattern);
+      return false;
+    }
   }
 }
 

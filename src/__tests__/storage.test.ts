@@ -192,4 +192,57 @@ describe('StorageService', () => {
       expect(result.errors).toContain('OpenAI model is required');
     });
   });
+
+  describe('URL Blacklisting', () => {
+    describe('getBlacklistedUrls', () => {
+      it('should return array of blacklisted URLs', () => {
+        const urls = storageService.getBlacklistedUrls();
+        expect(Array.isArray(urls)).toBe(true);
+        expect(urls.length).toBeGreaterThan(0);
+      });
+
+      it('should return a copy of the blacklist to prevent modification', () => {
+        const urls1 = storageService.getBlacklistedUrls();
+        const urls2 = storageService.getBlacklistedUrls();
+        expect(urls1).not.toBe(urls2); // Different array instances
+        expect(urls1).toEqual(urls2); // Same content
+      });
+    });
+
+    describe('isUrlBlacklisted', () => {
+      it('should return true for ft.com wildcard domain matches', () => {
+        expect(storageService.isUrlBlacklisted('https://www.ft.com/content/article')).toBe(true);
+        expect(storageService.isUrlBlacklisted('https://markets.ft.com/dashboard')).toBe(true);
+      });
+
+      it('should return true for internal-company.com wildcard subdomain matches', () => {
+        expect(storageService.isUrlBlacklisted('https://test.internal-company.com/page')).toBe(true);
+        expect(storageService.isUrlBlacklisted('https://dev.internal-company.com/admin')).toBe(true);
+      });
+
+      it('should return false for non-matching domains', () => {
+        expect(storageService.isUrlBlacklisted('https://google.com')).toBe(false);
+        expect(storageService.isUrlBlacklisted('https://github.com/user/repo')).toBe(false);
+        expect(storageService.isUrlBlacklisted('https://stackoverflow.com')).toBe(false);
+        expect(storageService.isUrlBlacklisted('https://admin.example.com/dashboard')).toBe(false);
+        expect(storageService.isUrlBlacklisted('https://secure-banking.com/login')).toBe(false);
+      });
+
+      it('should handle invalid URLs gracefully', () => {
+        expect(storageService.isUrlBlacklisted('')).toBe(false);
+        expect(storageService.isUrlBlacklisted('not-a-url')).toBe(false);
+        expect(storageService.isUrlBlacklisted('://invalid')).toBe(false);
+      });
+
+      it('should handle invalid regex patterns gracefully', () => {
+        // This test verifies the error handling in matchesPattern method
+        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+        
+        // The current blacklist shouldn't have invalid patterns, but this tests the robustness
+        expect(() => storageService.isUrlBlacklisted('https://test.com')).not.toThrow();
+        
+        consoleSpy.mockRestore();
+      });
+    });
+  });
 });

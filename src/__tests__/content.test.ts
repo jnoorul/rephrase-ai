@@ -394,4 +394,81 @@ describe('ContentScript', () => {
       expect(document.querySelector('.rephrase-modal')).toBeTruthy();
     });
   });
+
+  describe('URL Blacklisting', () => {
+    beforeEach(() => {
+      // Clear any existing event listeners
+      jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+      // Clean up window.location mock
+      delete (window as any).location;
+      (window as any).location = { href: 'https://example.com' };
+    });
+
+    it('should not initialize on blacklisted URLs', () => {
+      // Mock blacklisted URL - using one that matches *.ft.com
+      delete (window as any).location;
+      (window as any).location = { href: 'https://www.ft.com/content/article' };
+
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+      const setupMessageHandlersSpy = jest.spyOn(contentScript as any, 'setupMessageHandlers');
+      const setupSelectionHandlerSpy = jest.spyOn(contentScript as any, 'setupSelectionHandler');
+
+      contentScript.initialize();
+
+      expect(consoleLogSpy).toHaveBeenCalledWith('Rephrase AI: Extension disabled on this URL due to blacklist policy');
+      expect(setupMessageHandlersSpy).not.toHaveBeenCalled();
+      expect(setupSelectionHandlerSpy).not.toHaveBeenCalled();
+
+      consoleLogSpy.mockRestore();
+    });
+
+    it('should initialize normally on allowed URLs', () => {
+      // Mock allowed URL
+      delete (window as any).location;
+      (window as any).location = { href: 'https://google.com/search' };
+
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+      const setupMessageHandlersSpy = jest.spyOn(contentScript as any, 'setupMessageHandlers');
+      const setupSelectionHandlerSpy = jest.spyOn(contentScript as any, 'setupSelectionHandler');
+
+      contentScript.initialize();
+
+      expect(consoleLogSpy).not.toHaveBeenCalledWith('Rephrase AI: Extension disabled on this URL due to blacklist policy');
+      expect(setupMessageHandlersSpy).toHaveBeenCalled();
+      expect(setupSelectionHandlerSpy).toHaveBeenCalled();
+
+      consoleLogSpy.mockRestore();
+    });
+
+    it('should handle various blacklisted URL patterns', () => {
+      const testCases = [
+        'https://test.internal-company.com/page', // Matches *.internal-company.com
+        'https://markets.ft.com/dashboard', // Matches *.ft.com
+        'https://www.ft.com/content', // Matches *.ft.com
+        'https://dev.internal-company.com/admin' // Matches *.internal-company.com
+      ];
+
+      testCases.forEach(url => {
+        // Create fresh content script instance for each test
+        const testContentScript = new ContentScript();
+        
+        delete (window as any).location;
+        (window as any).location = { href: url };
+
+        const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+        const setupMessageHandlersSpy = jest.spyOn(testContentScript as any, 'setupMessageHandlers');
+
+        testContentScript.initialize();
+
+        expect(consoleLogSpy).toHaveBeenCalledWith('Rephrase AI: Extension disabled on this URL due to blacklist policy');
+        expect(setupMessageHandlersSpy).not.toHaveBeenCalled();
+
+        consoleLogSpy.mockRestore();
+        jest.clearAllMocks();
+      });
+    });
+  });
 });
