@@ -48,12 +48,15 @@ export interface ClaudeResponse {
 export type MessageType = 
   | 'REPHRASE_TEXT'
   | 'SUMMARIZE_TEXT'
+  | 'ASK_AI'
   | 'GET_SETTINGS'
   | 'SAVE_SETTINGS'
   | 'SHOW_MODAL'
   | 'UPDATE_MODAL'
   | 'SHOW_SUMMARY_MODAL'
   | 'UPDATE_SUMMARY_MODAL'
+  | 'SHOW_ASK_AI_MODAL'
+  | 'UPDATE_ASK_AI_MODAL'
   | 'HIDE_MODAL'
   | 'REPLACE_TEXT'
   | 'GET_SELECTION'
@@ -87,5 +90,23 @@ export interface SummaryRequest {
 export interface SummaryResponse {
   success: boolean;
   summaryText?: string;
+  error?: string;
+}
+
+export interface AskAIModalData {
+  originalText: string;
+  explanation?: string;
+  error?: string;
+  isLoading?: boolean;
+}
+
+export interface AskAIRequest {
+  text: string;
+  settings: ExtensionSettings;
+}
+
+export interface AskAIResponse {
+  success: boolean;
+  explanation?: string;
   error?: string;
 }

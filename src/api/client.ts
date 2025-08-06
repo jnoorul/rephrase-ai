@@ -1,8 +1,10 @@
-import { ExtensionSettings, RephraseResponse, SummaryResponse, OpenAIResponse, ClaudeResponse } from '../types';
+import { ExtensionSettings, RephraseResponse, SummaryResponse, AskAIResponse, OpenAIResponse, ClaudeResponse } from '../types';
 
 const DEFAULT_SYSTEM_PROMPT = 'You are a helpful assistant that rephrases text while maintaining the original meaning. Provide only the rephrased text without additional commentary.';
 
 const DEFAULT_SUMMARY_PROMPT = 'You are a helpful assistant that creates brief, clear summaries. Please format your response using proper markdown syntax with # for main headings, ## for subheadings, **bold** for emphasis, and - for bullet points. Summarize the following text in a concise manner.';
+
+const DEFAULT_ASK_AI_PROMPT = 'You are a helpful AI assistant that explains text clearly and provides useful context. Please format your response using proper markdown syntax with # for main headings, ## for subheadings, **bold** for emphasis, - for bullet points, and [link text](URL) for links. When explaining the text, break it down into key concepts, provide context where helpful, and include relevant links to authoritative sources when appropriate. Make your explanation educational and easy to understand.';
 
 export class OpenAIClient {
   private readonly baseUrl = 'https://api.openai.com/v1';
@@ -116,6 +118,63 @@ export class OpenAIClient {
       return {
         success: true,
         summaryText: summaryText.trim(),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
+  }
+
+  async askAI(text: string, settings: ExtensionSettings): Promise<AskAIResponse> {
+    try {
+      const prompt = DEFAULT_ASK_AI_PROMPT;
+      const userMessage = `Please explain and provide context for the following text: ${text}`;
+
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${settings.openaiApiKey}`,
+        },
+        body: JSON.stringify({
+          model: settings.openaiModel,
+          messages: [
+            {
+              role: 'system',
+              content: prompt,
+            },
+            {
+              role: 'user',
+              content: userMessage,
+            },
+          ],
+          max_tokens: 2500, // Longer for explanations
+          temperature: 0.4, // Balanced temperature for informative but creative responses
+        }),
+      });
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `OpenAI API Error: ${response.status} ${response.statusText}`,
+        };
+      }
+
+      const data: OpenAIResponse = await response.json();
+      const explanation = data.choices[0]?.message?.content;
+
+      if (!explanation) {
+        return {
+          success: false,
+          error: 'No response from OpenAI API',
+        };
+      }
+
+      return {
+        success: true,
+        explanation: explanation.trim(),
       };
     } catch (error) {
       return {
@@ -238,6 +297,59 @@ export class ClaudeClient {
       };
     }
   }
+
+  async askAI(text: string, settings: ExtensionSettings): Promise<AskAIResponse> {
+    try {
+      const prompt = DEFAULT_ASK_AI_PROMPT;
+      const userMessage = `${prompt}\n\nPlease explain and provide context for the following text: ${text}`;
+
+      const response = await fetch(`${this.baseUrl}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': settings.claudeApiKey!,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: settings.claudeModel,
+          max_tokens: 2500, // Longer for explanations
+          messages: [
+            {
+              role: 'user',
+              content: userMessage,
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `Claude API Error: ${response.status} ${response.statusText}`,
+        };
+      }
+
+      const data: ClaudeResponse = await response.json();
+      const explanation = data.content[0]?.text;
+
+      if (!explanation) {
+        return {
+          success: false,
+          error: 'No response from Claude API',
+        };
+      }
+
+      return {
+        success: true,
+        explanation: explanation.trim(),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
+  }
 }
 
 export class APIClientFactory {
@@ -257,5 +369,10 @@ export class APIClientFactory {
   static async summarize(text: string, settings: ExtensionSettings): Promise<SummaryResponse> {
     const client = this.create(settings);
     return client.summarize(text, settings);
+  }
+
+  static async askAI(text: string, settings: ExtensionSettings): Promise<AskAIResponse> {
+    const client = this.create(settings);
+    return client.askAI(text, settings);
   }
 }

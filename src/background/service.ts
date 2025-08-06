@@ -173,6 +173,10 @@ export class BackgroundService {
           await this.handleSummarizeTextMessage(message, sendResponse);
           break;
 
+        case 'ASK_AI':
+          await this.handleAskAITextMessage(message, sendResponse);
+          break;
+
         case 'GET_SETTINGS':
           await this.handleGetSettingsMessage(sendResponse);
           break;
@@ -293,6 +297,22 @@ export class BackgroundService {
       sendResponse({
         success: false,
         error: 'AI summary is not available at the moment, please try again',
+      });
+    }
+  }
+
+  private async handleAskAITextMessage(
+    message: ChromeMessage,
+    sendResponse: (response?: any) => void
+  ): Promise<void> {
+    try {
+      const settings = await storageService.getSettings();
+      const result = await APIClientFactory.askAI(message.payload.text, settings);
+      sendResponse(result);
+    } catch (error) {
+      sendResponse({
+        success: false,
+        error: 'AI explanation is not available at the moment, please try again',
       });
     }
   }

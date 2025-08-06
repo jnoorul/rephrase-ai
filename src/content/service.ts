@@ -1,4 +1,4 @@
-import { TextSelection, ChromeMessage, ModalData, SummaryModalData } from '../types';
+import { TextSelection, ChromeMessage, ModalData, SummaryModalData, AskAIModalData } from '../types';
 import { marked } from 'marked';
 
 export class ContentScript {
@@ -74,6 +74,12 @@ export class ContentScript {
 
       case 'UPDATE_SUMMARY_MODAL':
         this.updateSummaryModal(message.payload);
+        return false; // Sync response
+      case 'SHOW_ASK_AI_MODAL':
+        this.showAskAIModal(message.payload);
+        return false; // Sync response
+      case 'UPDATE_ASK_AI_MODAL':
+        this.updateAskAIModal(message.payload);
         return false; // Sync response
 
       case 'HIDE_MODAL':
@@ -164,7 +170,7 @@ export class ContentScript {
   }
 
   hideModal(): void {
-    const existingModal = document.querySelector('.rephrase-modal, .summary-modal');
+    const existingModal = document.querySelector('.rephrase-modal, .summary-modal, .ask-ai-modal');
     if (existingModal) {
       existingModal.remove();
     }
@@ -240,6 +246,13 @@ export class ContentScript {
     this.hideModal(); // Remove existing modal if any
 
     const modal = this.createSummaryModal(data);
+    document.body.appendChild(modal);
+  }
+
+  showAskAIModal(data: AskAIModalData): void {
+    this.hideModal(); // Remove existing modal if any
+
+    const modal = this.createAskAIModal(data);
     document.body.appendChild(modal);
   }
 
@@ -402,6 +415,87 @@ export class ContentScript {
     return modal;
   }
 
+  private createAskAIModal(data: AskAIModalData): HTMLElement {
+    const modal = document.createElement('div');
+    modal.className = 'ask-ai-modal';
+
+    const modalContent = document.createElement('div');
+    modalContent.className = 'ask-ai-modal-content';
+
+    if (data.isLoading) {
+      modalContent.innerHTML = `
+        <h3>Ask AI</h3>
+        <div class="ask-ai-loading">
+          <div class="ask-ai-loading-spinner"></div>
+          <div class="ask-ai-loading-dots">
+            <div class="ask-ai-loading-dot"></div>
+            <div class="ask-ai-loading-dot"></div>
+            <div class="ask-ai-loading-dot"></div>
+          </div>
+          <div class="ask-ai-loading-text">Analyzing text...</div>
+          <div class="ask-ai-loading-subtext">AI is understanding and explaining your text</div>
+        </div>
+      `;
+    } else {
+      modalContent.innerHTML = `
+        <h3>Ask AI</h3>
+        
+        <div class="ask-ai-text-section">
+          <label>Selected Text:</label>
+          <div class="text-content">${this.escapeHtml(data.originalText)}</div>
+        </div>
+        
+        ${
+          data.error
+            ? `
+          <div class="ask-ai-error">
+            ${this.escapeHtml(data.error)}
+          </div>
+        `
+            : `
+          <div class="ask-ai-explanation-section">
+            <label>AI Explanation:</label>
+            <div class="explanation-content">${this.formatExplanationText(data.explanation || '')}</div>
+          </div>
+        `
+        }
+        
+        <div class="ask-ai-buttons">
+          ${!data.error ? `<button class="ask-ai-button copy">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="ask-ai-button-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
+            </svg>
+            <span>Copy</span>
+          </button>` : ''}
+          <button class="ask-ai-button retry">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="ask-ai-button-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            <span>Retry</span>
+          </button>
+          <button class="ask-ai-button close">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="ask-ai-button-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span>Close</span>
+          </button>
+        </div>
+      `;
+    }
+
+    modal.appendChild(modalContent);
+
+    // Add event listeners (only if not loading)
+    if (!data.isLoading) {
+      this.addAskAIModalEventListeners(modal, data);
+    } else {
+      // Add minimal event listeners for loading state
+      this.addLoadingAskAIModalEventListeners(modal);
+    }
+
+    return modal;
+  }
+
   private formatSummaryText(text: string): string {
     // Configure marked for security and consistent output
     marked.setOptions({
@@ -417,6 +511,25 @@ export class ContentScript {
     } catch (error) {
       console.error('Error parsing markdown:', error);
       // Fallback to simple paragraph formatting only on actual errors
+      return `<p>${this.escapeHtml(text)}</p>`;
+    }
+  }
+
+  private formatExplanationText(text: string): string {
+    // Configure marked for security and consistent output
+    marked.setOptions({
+      gfm: true, // Enable GitHub Flavored Markdown
+      breaks: true, // Enable line breaks
+    });
+
+    try {
+      // Trust marked.js to handle all markdown formatting correctly
+      // The AI prompt now explicitly requests proper markdown format
+      const htmlContent = marked.parse(text) as string;
+      return htmlContent;
+    } catch (error) {
+      console.error('Error parsing markdown:', error);
+      // Fallback to simple paragraph formatting only on actual errors  
       return `<p>${this.escapeHtml(text)}</p>`;
     }
   }
@@ -928,8 +1041,43 @@ export class ContentScript {
       }, 100);
     });
 
+    // Ask AI button
+    const askAIButton = document.createElement('button');
+    askAIButton.className = 'selection-menu-button';
+    askAIButton.innerHTML = `
+      <svg class="selection-menu-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+      </svg>
+      <span>Ask AI</span>
+    `;
+    askAIButton.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Set flag to prevent menu from reappearing
+      this.isProcessingMenuAction = true;
+
+      // Store selection and trigger action
+      this.currentSelection = selection;
+
+      // Clear text selection to prevent menu from reappearing
+      window.getSelection()?.removeAllRanges();
+
+      // Hide menu
+      this.hideSelectionContextMenu();
+
+      // Trigger action
+      this.triggerAskAI(selection.text);
+
+      // Reset flag after a brief delay to allow event processing
+      setTimeout(() => {
+        this.isProcessingMenuAction = false;
+      }, 100);
+    });
+
     menu.appendChild(rephraseButton);
     menu.appendChild(summarizeButton);
+    menu.appendChild(askAIButton);
 
     return menu;
   }
@@ -1047,6 +1195,224 @@ export class ContentScript {
         error: 'AI summary is not available at the moment, please try again',
         isLoading: false,
       });
+    }
+  }
+
+  private async triggerAskAI(text: string): Promise<void> {
+    // Show loading modal immediately
+    this.showAskAIModal({
+      originalText: text,
+      isLoading: true,
+    });
+
+    try {
+      const response = await new Promise<any>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Request timed out. Please try again.'));
+        }, 60000); // 60 second timeout for AI explanation
+
+        chrome.runtime.sendMessage(
+          {
+            type: 'ASK_AI',
+            payload: { text },
+          },
+          response => {
+            clearTimeout(timeoutId);
+
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+              return;
+            }
+
+            if (!response) {
+              reject(new Error('No response received from service'));
+              return;
+            }
+
+            resolve(response);
+          }
+        );
+      });
+
+      if (response && response.success) {
+        this.updateAskAIModal({
+          originalText: text,
+          explanation: response.explanation,
+          isLoading: false,
+        });
+      } else {
+        this.updateAskAIModal({
+          originalText: text,
+          error: 'AI explanation is not available at the moment, please try again',
+          isLoading: false,
+        });
+      }
+    } catch (error) {
+      this.updateAskAIModal({
+        originalText: text,
+        error: 'AI explanation is not available at the moment, please try again',
+        isLoading: false,
+      });
+    }
+  }
+
+  private addAskAIModalEventListeners(modal: HTMLElement, data: AskAIModalData): void {
+    const copyButton = modal.querySelector('.ask-ai-button.copy') as HTMLButtonElement;
+    const retryButton = modal.querySelector('.ask-ai-button.retry') as HTMLButtonElement;
+    const closeButton = modal.querySelector('.ask-ai-button.close') as HTMLButtonElement;
+
+    // Copy button functionality
+    copyButton?.addEventListener('click', async () => {
+      if (data.explanation) {
+        const textContent = data.explanation;
+        try {
+          await navigator.clipboard.writeText(textContent);
+          
+          // Visual feedback for successful copy
+          const originalText = copyButton.innerHTML;
+          copyButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="ask-ai-button-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Copied!</span>
+          `;
+          
+          setTimeout(() => {
+            copyButton.innerHTML = originalText;
+          }, 2000);
+        } catch (error) {
+          console.error('Failed to copy to clipboard:', error);
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = textContent;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          
+          const originalText = copyButton.innerHTML;
+          copyButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="ask-ai-button-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Copied!</span>
+          `;
+          
+          setTimeout(() => {
+            copyButton.innerHTML = originalText;
+          }, 2000);
+        }
+      }
+    });
+
+    // Retry button functionality
+    retryButton?.addEventListener('click', async () => {
+      if (data.originalText) {
+        // Show loading modal immediately
+        this.showAskAIModal({
+          originalText: data.originalText,
+          isLoading: true,
+        });
+
+        try {
+          const response = await new Promise<any>((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+              reject(new Error('Request timed out. Please try again.'));
+            }, 60000); // 60 second timeout for AI explanation
+
+            chrome.runtime.sendMessage(
+              {
+                type: 'ASK_AI',
+                payload: { text: data.originalText },
+              },
+              response => {
+                clearTimeout(timeoutId);
+
+                if (chrome.runtime.lastError) {
+                  reject(new Error(chrome.runtime.lastError.message));
+                  return;
+                }
+
+                if (!response) {
+                  reject(new Error('No response received from service'));
+                  return;
+                }
+
+                resolve(response);
+              }
+            );
+          });
+
+          if (response && response.success) {
+            this.updateAskAIModal({
+              originalText: data.originalText,
+              explanation: response.explanation,
+              isLoading: false,
+            });
+          } else {
+            this.updateAskAIModal({
+              originalText: data.originalText,
+              error: 'AI explanation is not available at the moment, please try again',
+              isLoading: false,
+            });
+          }
+        } catch (error) {
+          this.updateAskAIModal({
+            originalText: data.originalText,
+            error: 'AI explanation is not available at the moment, please try again',
+            isLoading: false,
+          });
+        }
+      }
+    });
+
+    // Close button functionality
+    closeButton?.addEventListener('click', () => {
+      this.hideModal();
+    });
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        this.hideModal();
+      }
+    });
+
+    // Prevent closing when clicking inside the modal content
+    const modalContent = modal.querySelector('.ask-ai-modal-content');
+    modalContent?.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+  }
+
+  private addLoadingAskAIModalEventListeners(modal: HTMLElement): void {
+    // Close modal when clicking outside
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        this.hideModal();
+      }
+    });
+
+    // Prevent closing when clicking inside the modal content
+    const modalContent = modal.querySelector('.ask-ai-modal-content');
+    modalContent?.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+  }
+
+  updateAskAIModal(data: AskAIModalData): void {
+    const existingModal = document.querySelector('.ask-ai-modal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    const modal = this.createAskAIModal(data);
+    document.body.appendChild(modal);
+
+    if (data.isLoading) {
+      this.addLoadingAskAIModalEventListeners(modal);
+    } else {
+      this.addAskAIModalEventListeners(modal, data);
     }
   }
 }
