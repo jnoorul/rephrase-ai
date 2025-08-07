@@ -4,7 +4,7 @@ const DEFAULT_SYSTEM_PROMPT = 'You are a helpful assistant that rephrases text w
 
 const DEFAULT_SUMMARY_PROMPT = 'You are a helpful assistant that creates brief, clear summaries. Please format your response using proper markdown syntax with # for main headings, ## for subheadings, **bold** for emphasis, and - for bullet points. Summarize the following text in a concise manner.';
 
-const DEFAULT_ASK_AI_PROMPT = 'You are a helpful AI assistant that explains text clearly and provides useful context. Please format your response using proper markdown syntax with # for main headings, ## for subheadings, **bold** for emphasis, - for bullet points, and [link text](URL) for links. When explaining the text, break it down into key concepts, provide context where helpful, and include relevant links to authoritative sources when appropriate. Make your explanation educational and easy to understand.';
+const DEFAULT_ASK_AI_PROMPT = 'You are a helpful AI assistant that explains complex topics in a beginner-friendly way. Your goal is to make difficult concepts accessible to someone learning about the topic for the first time. Please format your response using proper markdown syntax with ## for headings, **bold** for emphasis, - for bullet points, and [link text](URL) for authoritative sources when helpful.\n\nGuidelines:\n- Write at a medium difficulty level (not too basic, not too advanced)\n- Keep explanations concise but comprehensive (2-4 paragraphs maximum)\n- Break down complex terms into simpler language\n- Use the broader page context to provide relevant background\n- Include 1-2 authoritative links only when they add significant value\n- Focus on helping the reader understand the "why" and "how", not just the "what"\n- Use analogies or examples when they make concepts clearer';
 
 export class OpenAIClient {
   private readonly baseUrl = 'https://api.openai.com/v1';
@@ -127,10 +127,15 @@ export class OpenAIClient {
     }
   }
 
-  async askAI(text: string, settings: ExtensionSettings): Promise<AskAIResponse> {
+  async askAI(text: string, settings: ExtensionSettings, pageContext?: string): Promise<AskAIResponse> {
     try {
       const prompt = DEFAULT_ASK_AI_PROMPT;
-      const userMessage = `Please explain and provide context for the following text: ${text}`;
+      
+      let userMessage = `Please explain the following selected text: "${text}"`;
+      
+      if (pageContext && pageContext.trim()) {
+        userMessage += `\n\nFor additional context, here is the surrounding page content:\n\n${pageContext.substring(0, 3000)}...`;
+      }
 
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
@@ -298,10 +303,15 @@ export class ClaudeClient {
     }
   }
 
-  async askAI(text: string, settings: ExtensionSettings): Promise<AskAIResponse> {
+  async askAI(text: string, settings: ExtensionSettings, pageContext?: string): Promise<AskAIResponse> {
     try {
       const prompt = DEFAULT_ASK_AI_PROMPT;
-      const userMessage = `${prompt}\n\nPlease explain and provide context for the following text: ${text}`;
+      
+      let userMessage = `${prompt}\n\nPlease explain the following selected text: "${text}"`;
+      
+      if (pageContext && pageContext.trim()) {
+        userMessage += `\n\nFor additional context, here is the surrounding page content:\n\n${pageContext.substring(0, 3000)}...`;
+      }
 
       const response = await fetch(`${this.baseUrl}/messages`, {
         method: 'POST',
@@ -371,8 +381,8 @@ export class APIClientFactory {
     return client.summarize(text, settings);
   }
 
-  static async askAI(text: string, settings: ExtensionSettings): Promise<AskAIResponse> {
+  static async askAI(text: string, settings: ExtensionSettings, pageContext?: string): Promise<AskAIResponse> {
     const client = this.create(settings);
-    return client.askAI(text, settings);
+    return client.askAI(text, settings, pageContext);
   }
 }

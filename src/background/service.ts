@@ -307,7 +307,11 @@ export class BackgroundService {
   ): Promise<void> {
     try {
       const settings = await storageService.getSettings();
-      const result = await APIClientFactory.askAI(message.payload.text, settings);
+      const result = await APIClientFactory.askAI(
+        message.payload.text, 
+        settings, 
+        message.payload.pageContext
+      );
       sendResponse(result);
     } catch (error) {
       sendResponse({

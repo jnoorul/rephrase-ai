@@ -102,6 +102,7 @@ export interface AskAIModalData {
 
 export interface AskAIRequest {
   text: string;
+  pageContext?: string;
   settings: ExtensionSettings;
 }
 

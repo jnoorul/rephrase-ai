@@ -1265,6 +1265,9 @@ export class ContentScript {
     });
 
     try {
+      // Get page content for better context
+      const pageContext = this.getMainPageContent();
+      
       const response = await new Promise<any>((resolve, reject) => {
         const timeoutId = setTimeout(() => {
           reject(new Error('Request timed out. Please try again.'));
@@ -1273,7 +1276,10 @@ export class ContentScript {
         chrome.runtime.sendMessage(
           {
             type: 'ASK_AI',
-            payload: { text },
+            payload: { 
+              text,
+              pageContext 
+            },
           },
           response => {
             clearTimeout(timeoutId);
@@ -1374,6 +1380,9 @@ export class ContentScript {
         });
 
         try {
+          // Get page content for better context
+          const pageContext = this.getMainPageContent();
+          
           const response = await new Promise<any>((resolve, reject) => {
             const timeoutId = setTimeout(() => {
               reject(new Error('Request timed out. Please try again.'));
@@ -1382,7 +1391,10 @@ export class ContentScript {
             chrome.runtime.sendMessage(
               {
                 type: 'ASK_AI',
-                payload: { text: data.originalText },
+                payload: { 
+                  text: data.originalText,
+                  pageContext 
+                },
               },
               response => {
                 clearTimeout(timeoutId);
